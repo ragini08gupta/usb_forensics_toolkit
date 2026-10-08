@@ -1,0 +1,5 @@
+venv/
+*.db
+recovered/
+__pycache__/
+*.pyc
