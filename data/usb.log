@@ -1,0 +1,16 @@
+Oct  8 10:15:32 lab kernel: [ 1234.567] usb 1-1: new high-speed USB device number 5 using xhci_hcd
+Oct  8 10:15:32 lab kernel: [ 1234.700] usb 1-1: New USB device found, idVendor=0781, idProduct=5567, bcdDevice= 1.00
+Oct  8 10:15:32 lab kernel: [ 1234.701] usb 1-1: Product: Cruzer Blade
+Oct  8 10:15:32 lab kernel: [ 1234.701] usb 1-1: Manufacturer: SanDisk
+Oct  8 10:15:32 lab kernel: [ 1234.701] usb 1-1: SerialNumber: 4C530001230915101234
+Oct  8 10:42:10 lab kernel: [ 2812.100] usb 1-1: USB disconnect, device number 5
+Oct  8 14:03:55 lab kernel: [ 9000.000] usb 1-1: New USB device found, idVendor=0951, idProduct=1666, bcdDevice= 1.10
+Oct  8 14:03:55 lab kernel: [ 9000.001] usb 1-1: Product: DataTraveler
+Oct  8 14:03:55 lab kernel: [ 9000.001] usb 1-1: Manufacturer: Kingston
+Oct  8 14:03:55 lab kernel: [ 9000.001] usb 1-1: SerialNumber: 001CC0EC34
+Oct  8 14:30:00 lab kernel: [ 9500.000] usb 1-1: USB disconnect, device number 6
+Oct  8 22:50:02 lab kernel: [12000.000] usb 1-2: New USB device found, idVendor=0781, idProduct=5567, bcdDevice= 1.00
+Oct  8 22:50:02 lab kernel: [12000.001] usb 1-2: Product: Cruzer Blade
+Oct  8 22:50:02 lab kernel: [12000.001] usb 1-2: Manufacturer: SanDisk
+Oct  8 22:50:02 lab kernel: [12000.001] usb 1-2: SerialNumber: 4C530001230915101234
+Oct  8 23:10:10 lab kernel: [13000.000] usb 1-2: USB disconnect, device number 7

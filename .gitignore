@@ -3,3 +3,4 @@ venv/
 recovered/
 __pycache__/
 *.pyc
+data/*.img
