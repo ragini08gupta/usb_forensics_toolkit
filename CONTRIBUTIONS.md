@@ -1,1 +1,2 @@
 - Day 1: repo, folders, environment set up (Ragini)
+- Day 2-5: db.py, forensics.py (listing, recovery, suspicious rules) working on Scenario B (Ragini)
