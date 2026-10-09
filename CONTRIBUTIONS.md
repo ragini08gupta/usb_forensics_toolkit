@@ -1,2 +1,3 @@
 - Day 1: repo, folders, environment set up (Ragini)
 - Day 2-5: db.py, forensics.py (listing, recovery, suspicious rules) working on Scenario B (Ragini)
+- 2026-10-09: timeline.py and main.py working end to end on Scenario B (Ragini)
