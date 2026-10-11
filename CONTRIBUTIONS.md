@@ -1,3 +1,4 @@
 - Day 1: repo, folders, environment set up (Ragini)
 - Day 2-5: db.py, forensics.py (listing, recovery, suspicious rules) working on Scenario B (Ragini)
 - 2026-10-09: timeline.py and main.py working end to end on Scenario B (Ragini)
+- 2026-10-11: writeblock.py (read-only acquisition, SHA-256/MD5 verification, chain-of-custody log), integration into main.py, tests/test_writeblock.py (Vijay)

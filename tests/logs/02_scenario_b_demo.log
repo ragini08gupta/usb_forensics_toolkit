@@ -1,0 +1,72 @@
+$ sha256sum data/scenario_b.img
+0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266  data/scenario_b.img
+
+$ python main.py data/scenario_b.img --examiner Vijay
+[1/6] Acquiring evidence (software write-block + SHA-256/MD5)...
+  Hashing source before acquisition...
+  Software write-block : source opened O_RDONLY, write attempt BLOCKED (EBADF: descriptor opened O_RDONLY)
+  OS read-only status  : file is writable by this user (permissions are not read-only)
+  Hardware blocker     : not used / not verified
+  Copying 67108864 bytes in 1024 KiB chunks...
+  Hashing acquired copy and re-hashing source...
+    [PASS] SHA-256 source == copy
+    [PASS] MD5     source == copy
+    [PASS] size    source == copy
+    [PASS] source unchanged (SHA-256 before == after)
+  Source  : /home/vijay/proj/data/scenario_b.img
+  Copy    : /home/vijay/proj/evidence/case_1/evidence.img  (67108864 bytes, read-only)
+  SHA-256 : 0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266
+  MD5     : 69d758f83936014819154ec14a435c74
+  Status  : VERIFIED (evidence id 1)
+[2/6] Analysing file system (on the acquired copy)...
+[3/6] Parsing USB connection log...
+[4/6] Building timeline...
+[5/6] Re-verifying acquired copy after analysis...
+  [PASS] acquired copy still matches acquisition hash
+[6/6] Summary
+  Evidence integrity: VERIFIED
+  Files found: 8  Deleted: 2  Suspicious: 6
+  USB sessions: 3
+  ! /client_list.docx: suspicious keyword in filename
+  ! /invoice.jpg: extension .jpg does not match exe content
+  ! /passwords.txt: suspicious keyword in filename
+  ! /report.pdf: extension .pdf does not match zip/office content; suspicious keyword in content
+  ! /salary.xlsx: suspicious keyword in filename
+  ! /secret.txt: hidden attribute set; suspicious keyword in filename
+
+TIME                       SOURCE      EVENT               DETAIL
+2026-10-08T10:15:32        usb_log     USB_CONNECT         0781:5567 SanDisk Cruzer Blade serial=4C530001230915101234
+2026-10-08T10:42:10        usb_log     USB_DISCONNECT      0781:5567 SanDisk Cruzer Blade serial=4C530001230915101234
+2026-10-08T14:03:55        usb_log     USB_CONNECT         0951:1666 Kingston DataTraveler serial=001CC0EC34
+2026-10-08T14:30:00        usb_log     USB_DISCONNECT      0951:1666 Kingston DataTraveler serial=001CC0EC34
+2026-10-08T22:50:02        usb_log     USB_CONNECT         0781:5567 SanDisk Cruzer Blade serial=4C530001230915101234
+2026-10-08T23:10:10        usb_log     USB_DISCONNECT      0781:5567 SanDisk Cruzer Blade serial=4C530001230915101234
+2026-10-11T00:00:00        filesystem  FILE_ACCESSED       /client_list.docx
+2026-10-11T00:00:00        filesystem  FILE_ACCESSED       /holiday.jpg
+2026-10-11T00:00:00        filesystem  FILE_ACCESSED       /invoice.jpg
+2026-10-11T00:00:00        filesystem  FILE_ACCESSED       /notes.txt
+2026-10-11T00:00:00        filesystem  FILE_ACCESSED       /passwords.txt
+2026-10-11T00:00:00        filesystem  FILE_ACCESSED       /report.pdf
+2026-10-11T00:00:00        filesystem  FILE_ACCESSED       /salary.xlsx
+2026-10-11T00:00:00        filesystem  FILE_ACCESSED       /secret.txt
+2026-10-11T05:57:54        filesystem  FILE_CREATED        /client_list.docx
+2026-10-11T05:57:54        filesystem  FILE_MODIFIED       /client_list.docx
+2026-10-11T05:57:54        filesystem  FILE_CREATED        /holiday.jpg
+2026-10-11T05:57:54        filesystem  FILE_MODIFIED       /holiday.jpg
+2026-10-11T05:57:54        filesystem  FILE_CREATED        /invoice.jpg
+2026-10-11T05:57:54        filesystem  FILE_MODIFIED       /invoice.jpg
+2026-10-11T05:57:54        filesystem  FILE_CREATED        /notes.txt
+2026-10-11T05:57:54        filesystem  FILE_MODIFIED       /notes.txt
+2026-10-11T05:57:54        filesystem  FILE_CREATED        /passwords.txt
+2026-10-11T05:57:54        filesystem  FILE_MODIFIED       /passwords.txt
+2026-10-11T05:57:54        filesystem  FILE_DELETED_ENTRY  /passwords.txt (deletion time unknown, mtime used)
+2026-10-11T05:57:54        filesystem  FILE_CREATED        /report.pdf
+2026-10-11T05:57:54        filesystem  FILE_MODIFIED       /report.pdf
+2026-10-11T05:57:54        filesystem  FILE_CREATED        /salary.xlsx
+2026-10-11T05:57:54        filesystem  FILE_MODIFIED       /salary.xlsx
+2026-10-11T05:57:54        filesystem  FILE_DELETED_ENTRY  /salary.xlsx (deletion time unknown, mtime used)
+2026-10-11T05:57:54        filesystem  FILE_CREATED        /secret.txt
+2026-10-11T05:57:54        filesystem  FILE_MODIFIED       /secret.txt
+
+Case 1 saved to case.db, timeline.csv written (0.77s)
+(exit code 0)

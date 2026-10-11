@@ -1,0 +1,29 @@
+digraph writeblock {
+  graph [rankdir=TB, bgcolor="white", pad="0.5", nodesep="0.6", ranksep="0.45", dpi=200];
+  node  [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=15,
+         fillcolor="#EEEDFE", color="#534AB7", fontcolor="#3C3489", penwidth=1.2, width=3.6, height=0.75];
+  edge  [color="#888888", penwidth=1.6, arrowhead=vee, fontname="DejaVu Sans", fontsize=13, fontcolor="#555555"];
+
+  val   [label=<<b>Validate inputs</b><br/><font point-size="12">source exists, file/block device, not empty;<br/>destination must not exist</font>>];
+  ok    [label=<<b>Inputs valid?</b>>, fillcolor="#FAEEDA", color="#854F0B", fontcolor="#633806"];
+  fail  [label=<<b>Record FAILED</b><br/><font point-size="12">evidence row + custody_log;<br/>stop, original never analysed</font>>, fillcolor="#FCEBEB", color="#A32D2D", fontcolor="#791F1F"];
+  h1    [label=<<b>Hash source</b><br/><font point-size="12">SHA-256 + MD5 before acquisition</font>>];
+  ro    [label=<<b>Open source O_RDONLY</b><br/><font point-size="12">zero-byte write probe must be refused (EBADF)</font>>];
+  cp    [label=<<b>Copy in 1 MiB chunks</b><br/><font point-size="12">to evidence.img.part (O_EXCL, fsync)</font>>];
+  h2    [label=<<b>Hash copy, re-hash source</b><br/><font point-size="12">read back from disk</font>>];
+  match [label=<<b>All hashes and sizes match?</b>>, fillcolor="#FAEEDA", color="#854F0B", fontcolor="#633806"];
+  bad   [label=<<b>Record MISMATCH</b><br/><font point-size="12">keep copy as .MISMATCH;<br/>raise IntegrityError, stop</font>>, fillcolor="#FCEBEB", color="#A32D2D", fontcolor="#791F1F"];
+  good  [label=<<b>Finalise evidence.img</b><br/><font point-size="12">no overwrite, chmod 0444;<br/>record VERIFIED + custody</font>>];
+  ret   [label=<<b>Return copy path</b><br/><font point-size="12">forensics.analyze(copy)  (Ragini)</font>>, fillcolor="#E1F5EE", color="#0F6E56", fontcolor="#085041"];
+  rv    [label=<<b>Re-verify after analysis</b><br/><font point-size="12">REVERIFY_PASS / REVERIFY_FAIL</font>>];
+
+  val -> ok;
+  ok -> h1 [label="  yes"];
+  ok -> fail [label="  no"];
+  h1 -> ro -> cp -> h2 -> match;
+  match -> good [label="  yes"];
+  match -> bad [label="  no"];
+  good -> ret -> rv;
+  {rank=same; ok; fail}
+  {rank=same; match; bad}
+}

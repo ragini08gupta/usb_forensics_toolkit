@@ -1,0 +1,2 @@
+# Python packages (system tools needed too: sudo apt install sleuthkit mtools dosfstools sqlite3)
+pytsk3

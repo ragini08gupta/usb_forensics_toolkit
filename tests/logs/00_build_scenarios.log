@@ -1,0 +1,3 @@
+$ cd data && bash make_scenarios.sh && cd ..
+Scenario images rebuilt.
+

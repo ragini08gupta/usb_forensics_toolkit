@@ -1,0 +1,32 @@
+$ /home/claude/venv/bin/python -m unittest discover -s tests -v
+test_01_successful_acquisition_hashes_match (test_writeblock.TestAcquisition.test_01_successful_acquisition_hashes_match) ... ok
+test_02_original_evidence_preserved (test_writeblock.TestAcquisition.test_02_original_evidence_preserved) ... ok
+test_03_copy_is_read_only_and_no_partial_left (test_writeblock.TestAcquisition.test_03_copy_is_read_only_and_no_partial_left) ... ok
+test_04_chain_of_custody_recorded (test_writeblock.TestAcquisition.test_04_chain_of_custody_recorded) ... ok
+test_05_hash_mismatch_detected (test_writeblock.TestAcquisition.test_05_hash_mismatch_detected) ... ok
+test_06_source_changed_during_acquisition_detected (test_writeblock.TestAcquisition.test_06_source_changed_during_acquisition_detected) ... ok
+test_07_missing_source (test_writeblock.TestAcquisition.test_07_missing_source) ... ok
+test_08_invalid_sources (test_writeblock.TestAcquisition.test_08_invalid_sources) ... ok
+test_09_existing_destination_not_overwritten (test_writeblock.TestAcquisition.test_09_existing_destination_not_overwritten) ... ok
+test_10_repeated_acquisition (test_writeblock.TestAcquisition.test_10_repeated_acquisition) ... ok
+test_11_leftover_partial_file_is_not_touched (test_writeblock.TestAcquisition.test_11_leftover_partial_file_is_not_touched) ... ok
+test_12_io_error_during_copy_cleans_up (test_writeblock.TestAcquisition.test_12_io_error_during_copy_cleans_up) ... ok
+test_13_unknown_case_rejected (test_writeblock.TestAcquisition.test_13_unknown_case_rejected) ... ok
+test_14_reverify_detects_later_tampering (test_writeblock.TestAcquisition.test_14_reverify_detects_later_tampering) ... ok
+test_23_broken_output_does_not_change_outcome (test_writeblock.TestAcquisition.test_23_broken_output_does_not_change_outcome) ... ok
+test_18_old_case_db_is_upgraded (test_writeblock.TestDatabaseCompatibility.test_18_old_case_db_is_upgraded) ... ok
+test_19_scenario_b_on_acquired_copy (test_writeblock.TestIntegrationWithForensics.test_19_scenario_b_on_acquired_copy) ... ok
+test_20_scenario_a_clean (test_writeblock.TestIntegrationWithForensics.test_20_scenario_a_clean) ... ok
+test_21_main_runs_twice_and_verifies (test_writeblock.TestMainPipeline.test_21_main_runs_twice_and_verifies) ... ok
+test_22_main_stops_on_missing_source (test_writeblock.TestMainPipeline.test_22_main_stops_on_missing_source) ... ok
+test_24_main_missing_usb_log_clean_error (test_writeblock.TestMainPipeline.test_24_main_missing_usb_log_clean_error) ... ok
+test_25_main_non_disk_image_clean_error (test_writeblock.TestMainPipeline.test_25_main_non_disk_image_clean_error) ... ok
+test_15_write_probe_blocks_read_only_descriptor (test_writeblock.TestWriteProtection.test_15_write_probe_blocks_read_only_descriptor) ... ok
+test_16_write_probe_rejects_writable_descriptor (test_writeblock.TestWriteProtection.test_16_write_probe_rejects_writable_descriptor) ... ok
+test_17_hash_file_matches_hashlib (test_writeblock.TestWriteProtection.test_17_hash_file_matches_hashlib) ... ok
+
+----------------------------------------------------------------------
+Ran 25 tests in 5.017s
+
+OK
+
