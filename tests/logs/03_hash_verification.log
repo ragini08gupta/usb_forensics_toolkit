@@ -1,0 +1,33 @@
+$ sha256sum data/scenario_b.img evidence/case_1/evidence.img
+0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266  data/scenario_b.img
+0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266  evidence/case_1/evidence.img
+
+$ md5sum data/scenario_b.img evidence/case_1/evidence.img
+69d758f83936014819154ec14a435c74  data/scenario_b.img
+69d758f83936014819154ec14a435c74  evidence/case_1/evidence.img
+
+$ ls -l evidence/case_1/
+total 65536
+-r--r--r-- 1 vijay vijay 67108864 Oct 11 05:58 evidence.img
+
+$ python -m modules.writeblock verify 1
+Evidence 1: /home/vijay/proj/evidence/case_1/evidence.img
+  stored SHA-256 0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266
+  [PASS] acquired copy still matches acquisition hash
+(exit code 0)
+
+$ sqlite3 -header -column case.db "SELECT id, case_id, status, verified, size_bytes, examiner, acquired_at FROM evidence;"
+id  case_id  status    verified  size_bytes  examiner  acquired_at                     
+--  -------  --------  --------  ----------  --------  --------------------------------
+1   1        VERIFIED  1         67108864    Vijay     2026-10-11T05:58:01.239614+00:00
+
+$ sqlite3 -line case.db "SELECT source_path, dest_path, sha256_before, sha256_after, sha256_source_after, md5, md5_after, protection FROM evidence WHERE id=1;"
+        source_path = /home/vijay/proj/data/scenario_b.img
+          dest_path = /home/vijay/proj/evidence/case_1/evidence.img
+      sha256_before = 0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266
+       sha256_after = 0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266
+sha256_source_after = 0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266
+                md5 = 69d758f83936014819154ec14a435c74
+          md5_after = 69d758f83936014819154ec14a435c74
+         protection = software: O_RDONLY, write probe BLOCKED (EBADF: descriptor opened O_RDONLY); OS: file is writable by this user (permissions are not read-only); hardware write-blocker: not used / not verified
+

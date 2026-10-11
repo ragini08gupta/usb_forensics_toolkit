@@ -1,0 +1,46 @@
+$ python tests/demo_mismatch.py
+=== Demo 1: the copy is corrupted during acquisition (1 byte flipped) ===
+  Hashing source before acquisition...
+  Software write-block : source opened O_RDONLY, write attempt BLOCKED (EBADF: descriptor opened O_RDONLY)
+  OS read-only status  : file is writable by this user (permissions are not read-only)
+  Hardware blocker     : not used / not verified
+  Copying 67108864 bytes in 1024 KiB chunks...
+  Hashing acquired copy and re-hashing source...
+    [FAIL] SHA-256 source == copy
+    [FAIL] MD5     source == copy
+    [PASS] size    source == copy
+    [PASS] source unchanged (SHA-256 before == after)
+  -> IntegrityError raised: hash verification failed: SHA-256 source == copy, MD5     source == copy
+  DB row: status=MISMATCH verified=0
+  source SHA-256: 0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266
+  copy   SHA-256: a54ae0d6e1c803e7800968ad8166e2c3dc60df5b9bdab49fdf2b7bab3b46703a
+
+=== Demo 2: a good copy is tampered with AFTER acquisition ===
+  Hashing source before acquisition...
+  Software write-block : source opened O_RDONLY, write attempt BLOCKED (EBADF: descriptor opened O_RDONLY)
+  OS read-only status  : file is writable by this user (permissions are not read-only)
+  Hardware blocker     : not used / not verified
+  Copying 67108864 bytes in 1024 KiB chunks...
+  Hashing acquired copy and re-hashing source...
+    [PASS] SHA-256 source == copy
+    [PASS] MD5     source == copy
+    [PASS] size    source == copy
+    [PASS] source unchanged (SHA-256 before == after)
+  [PASS] acquired copy still matches acquisition hash
+  (one byte of the disposable copy changed)
+  [FAIL] acquired copy still matches acquisition hash
+
+Chain-of-custody entries for this demo:
+  ACQUISITION_STARTED
+  SOURCE_HASHED
+  WRITE_PROTECTION
+  VERIFICATION_FAILED
+  ACQUISITION_STARTED
+  SOURCE_HASHED
+  WRITE_PROTECTION
+  ACQUISITION_VERIFIED
+  REVERIFY_PASS
+  REVERIFY_FAIL
+
+Temporary files removed. Original image untouched.
+(exit code 0)

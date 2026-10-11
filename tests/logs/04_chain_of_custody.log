@@ -1,0 +1,7 @@
+$ python -m modules.writeblock custody 1
+2026-10-11T05:58:00  Vijay    ACQUISITION_STARTED    source=/home/vijay/proj/data/scenario_b.img dest=/home/vijay/proj/evidence/case_1/evidence.img tool=usb_forensics_toolkit writeblock.py v1.0 (software write-block)
+2026-10-11T05:58:00  Vijay    SOURCE_HASHED          sha256=0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266 md5=69d758f83936014819154ec14a435c74 size=67108864
+2026-10-11T05:58:00  Vijay    WRITE_PROTECTION       software: O_RDONLY, write probe BLOCKED (EBADF: descriptor opened O_RDONLY); OS: file is writable by this user (permissions are not read-only); hardware write-blocker: not used / not verified
+2026-10-11T05:58:01  Vijay    ACQUISITION_VERIFIED   copy=/home/vijay/proj/evidence/case_1/evidence.img sha256=0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266 md5=69d758f83936014819154ec14a435c74 (copy set to read-only 0444)
+2026-10-11T05:58:01  Vijay    REVERIFY_PASS          sha256=0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266 md5=69d758f83936014819154ec14a435c74 stored_sha256=0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266
+2026-10-11T05:58:01  Vijay    REVERIFY_PASS          sha256=0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266 md5=69d758f83936014819154ec14a435c74 stored_sha256=0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266

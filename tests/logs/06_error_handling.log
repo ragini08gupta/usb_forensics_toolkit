@@ -1,0 +1,42 @@
+# 1. Missing source file
+$ python main.py data/does_not_exist.img
+[1/6] Acquiring evidence (software write-block + SHA-256/MD5)...
+  ACQUISITION FAILED: source not found: data/does_not_exist.img
+  Analysis stopped. Failure recorded for case 3 in case.db.
+(exit code 2)
+
+# 2. Attempt to write to the acquired (read-only) copy as a normal user
+$ echo tamper >> evidence/case_1/evidence.img
+bash: evidence/case_1/evidence.img: Permission denied
+(exit code 1)
+
+# 3. Optional OS layer: make the original read-only, then try to write to it
+$ chmod a-w data/scenario_b.img
+
+$ echo tamper >> data/scenario_b.img
+bash: data/scenario_b.img: Permission denied
+(exit code 1)
+
+$ sha256sum data/scenario_b.img evidence/case_1/evidence.img
+0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266  data/scenario_b.img
+0894c4815612f14599ca9c501b2ce128e1aafe2c1f0e098364675b5e6ccf4266  evidence/case_1/evidence.img
+
+$ python main.py data/scenario_b.img --examiner Vijay | sed -n 1,6p
+[1/6] Acquiring evidence (software write-block + SHA-256/MD5)...
+  Hashing source before acquisition...
+  Software write-block : source opened O_RDONLY, write attempt BLOCKED (EBADF: descriptor opened O_RDONLY)
+  OS read-only status  : file permissions are read-only for this user
+  Hardware blocker     : not used / not verified
+  Copying 67108864 bytes in 1024 KiB chunks...
+
+$ chmod u+w data/scenario_b.img
+
+# 4. Failure rows recorded in the database (never reported as success)
+$ sqlite3 -header -column case.db "SELECT id, case_id, status, verified, source_path FROM evidence;"
+id  case_id  status    verified  source_path                             
+--  -------  --------  --------  ----------------------------------------
+1   1        VERIFIED  1         /home/vijay/proj/data/scenario_b.img    
+2   2        VERIFIED  1         /home/vijay/proj/data/scenario_a.img    
+3   3        FAILED    0         /home/vijay/proj/data/does_not_exist.img
+4   4        VERIFIED  1         /home/vijay/proj/data/scenario_b.img    
+
