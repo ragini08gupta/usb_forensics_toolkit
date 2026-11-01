@@ -1,8 +1,6 @@
-# How to run the final project, and what to show the professor
+# How to run the project
 
-**For:** Ragini (you ran the prototype on your machine, so you'll run this one too)
 **Project:** USB Forensics Investigation Toolkit, final version
-**Time needed:** about 10 minutes of setup, then about 10 minutes for the demo
 
 This guide assumes the same setup you used for the prototype: Ubuntu or WSL (Ubuntu on Windows) with Python 3.10 or newer.
 
