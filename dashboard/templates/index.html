@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Cases | USB Forensics{% endblock %}
+{% block body %}
+<h1>Investigations</h1>
+<p class="sub">Each case first makes a verified, read-only copy of the evidence. All analysis runs on that copy, so the original is never changed.</p>
+
+<div class="stack">
+<section class="panel">
+  <h2>Start a new investigation</h2>
+  <form class="new" method="post" action="{{ url_for('new_case') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label>Evidence image
+      <select name="image" required>{% for i in choices.images %}<option>{{ i }}</option>{% endfor %}</select></label>
+    <label>USB kernel log
+      <select name="log" required>{% for i in choices.logs %}<option>{{ i }}</option>{% endfor %}</select></label>
+    <label>USB packet capture (optional)
+      <select name="pcap"><option value="">None</option>{% for i in choices.pcaps %}<option>{{ i }}</option>{% endfor %}</select></label>
+    <label>Examiner
+      <input type="text" name="examiner" value="Vijay" maxlength="40" required></label>
+    <div class="submit"><button class="btn primary" type="submit">Acquire and analyse</button></div>
+  </form>
+  <p class="note">Only files in <code>data/</code> can be chosen here. To acquire a real pen drive, use the command line: <code>python main.py /dev/sdX</code>.</p>
+</section>
+
+<section class="panel">
+  <h2>Cases</h2>
+  {% if cases %}
+  <div class="scroll"><table>
+    <tr><th>Case</th><th>Name</th><th>Examiner</th><th>Opened (UTC)</th><th>Evidence</th><th>Files</th><th>Flagged</th><th>Rogue devices</th><th>High alerts</th></tr>
+    {% for c in cases %}
+    <tr>
+      <td>{{ c.id }}</td>
+      <td><a href="{{ url_for('case', case_id=c.id) }}">{{ c.name }}</a></td>
+      <td>{{ c.examiner }}</td>
+      <td style="white-space:nowrap">{{ c.created|t19 }}</td>
+      <td><span class="badge {{ c.status or 'grey' }}">{{ c.status|label if c.status else 'No evidence' }}</span></td>
+      <td>{{ c.n_files }}</td>
+      <td>{{ c.n_sus }}</td>
+      <td>{% if c.n_rogue %}<span class="badge bad">{{ c.n_rogue }}</span>{% else %}0{% endif %}</td>
+      <td>{% if c.n_high %}<span class="badge HIGH">{{ c.n_high }}</span>{% else %}0{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  {% else %}
+  <p class="muted">No cases yet. Start one with the form above, or run <code>python main.py data/scenario_b.img data/usb.log --pcap data/usb_capture.pcap</code>.</p>
+  {% endif %}
+</section>
+</div>
+{% endblock %}

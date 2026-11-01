@@ -1,0 +1,11 @@
+{
+  "notes.txt":                {"created": "2026-10-14 21:03:10", "modified": "2026-10-10 09:15:00", "accessed": "2026-10-14"},
+  "lunch_menu.txt":           {"created": "2026-10-14 21:03:40", "modified": "2026-10-13 12:30:12", "accessed": "2026-10-14"},
+  "contract_confidential.pdf":{"created": "2026-10-14 21:06:22", "modified": "2026-10-09 15:42:30", "accessed": "2026-10-14"},
+  "payroll_q3.xlsx":          {"created": "2026-10-14 21:07:05", "modified": "2026-10-12 18:10:44", "accessed": "2026-10-14"},
+  "client_database.csv":      {"created": "2026-10-14 21:08:51", "modified": "2026-10-11 10:05:16", "accessed": "2026-10-14"},
+  "passwords_backup.txt":     {"created": "2026-10-14 21:09:30", "modified": "2026-10-01 08:20:02", "accessed": "2026-10-14"},
+  "team_photo.jpg":           {"created": "2026-10-14 21:11:18", "modified": "2026-10-14 20:58:40", "accessed": "2026-10-14"},
+  "vpn_config.txt":           {"created": "2026-10-14 21:12:44", "modified": "2026-10-14 21:12:40", "accessed": "2026-10-14"},
+  "archive.dat":              {"created": "2026-10-14 21:14:02", "modified": "2026-10-13 22:30:00", "accessed": "2026-10-14"}
+}

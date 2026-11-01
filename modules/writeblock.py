@@ -8,9 +8,12 @@ What this module actually does (and does NOT do):
     Before copying, a zero-byte write is attempted on that descriptor; the
     kernel must refuse it (EBADF). A zero-byte write cannot change any data,
     so this probe is safe even on real evidence.
-  * OS-level status is REPORTED, not changed: whether the file permissions
-    (or a block device's kernel read-only flag) would stop a write.
-    Running as root bypasses permission bits, and this is reported too.
+  * OS-level status is REPORTED: whether the file permissions (or a block
+    device's kernel read-only flag) would stop a write. Running as root
+    bypasses permission bits, and this is reported too.
+  * Optional (--setro, root, live block devices only): the kernel read-only
+    flag is switched ON with `blockdev --setro` BEFORE the source is opened,
+    so no process on the machine can write to the device during acquisition.
   * HARDWARE write-blocking is NOT used and NOT verified by this tool.
   * Hashing does not prevent modification - it DETECTS it. SHA-256 and MD5
     are calculated for the source before acquisition, for the copy after
@@ -26,6 +29,7 @@ import errno
 import hashlib
 import os
 import stat
+import subprocess
 import sys
 from datetime import datetime, timezone
 
@@ -110,6 +114,25 @@ def os_protection_status(path):
     return "file permissions are read-only for this user"
 
 
+def enforce_kernel_ro(path):
+    """Set the kernel read-only flag on a block device (blockdev --setro).
+    Returns a description of what happened. Never raises for regular files."""
+    st = os.stat(path)
+    if not stat.S_ISBLK(st.st_mode):
+        return "not a block device: kernel read-only flag not applicable"
+    if hasattr(os, "geteuid") and os.geteuid() != 0:
+        raise AcquisitionError("--setro needs root (sudo) to set the kernel read-only flag")
+    try:
+        subprocess.run(["blockdev", "--setro", path], check=True, capture_output=True)
+        ro = subprocess.run(["blockdev", "--getro", path], check=True,
+                            capture_output=True, text=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError) as e:
+        raise AcquisitionError(f"blockdev --setro failed: {e}")
+    if ro != "1":
+        raise AcquisitionError("kernel read-only flag did not stick (blockdev --getro != 1)")
+    return "kernel read-only flag SET by blockdev --setro (verified with --getro)"
+
+
 # --------------------------------------------------------------------------
 # Database helpers (existing evidence table + custody_log)
 # --------------------------------------------------------------------------
@@ -190,7 +213,7 @@ def _place_final(part, final):
 
 
 def acquire(source, dest, conn, case_id, examiner=None,
-            chunk_size=CHUNK_SIZE, log=print):
+            chunk_size=CHUNK_SIZE, log=print, set_ro=False):
     """
     Acquire a forensic copy of `source` into `dest` and verify it.
 
@@ -212,13 +235,19 @@ def acquire(source, dest, conn, case_id, examiner=None,
             raise AcquisitionError(f"leftover partial file exists, remove it first: {part}")
         os.makedirs(os.path.dirname(os.path.abspath(dest)), exist_ok=True)
 
+        # 0. (optional, live devices) kernel read-only flag BEFORE anything reads the source
+        if set_ro:
+            ro_msg = enforce_kernel_ro(source)
+            say(f"  Kernel read-only     : {ro_msg}")
+            custody(conn, case_id, examiner, "KERNEL_SETRO", ro_msg)
+
         # 1. hash the source BEFORE touching anything
         say("  Hashing source before acquisition...")
         rec["sha256_before"], rec["md5_before"], src_size = hash_file(source, chunk_size)
         custody(conn, case_id, examiner, "SOURCE_HASHED",
                 f"sha256={rec['sha256_before']} md5={rec['md5_before']} size={src_size}")
 
-        # 2. open source read-only and prove a write is refused
+        # 2. open read-only and prove a write is refused
         src_fd = os.open(source, os.O_RDONLY)
         try:
             probe = write_probe(src_fd)

@@ -1,0 +1,53 @@
+{
+  "_comment": "Known-good USB device fingerprints for impersonation detection. Add the organisation's approved devices here. bcd values are written like the kernel prints them (1.00).",
+  "profiles": [
+    {
+      "name": "SanDisk Cruzer Blade",
+      "vid": "0781", "pid": "5567",
+      "manufacturer": "SanDisk", "product": "Cruzer Blade",
+      "bcd_device": ["1.00", "1.26", "1.27"],
+      "min_bcd_usb": "2.00",
+      "interfaces": ["mass_storage"],
+      "serial_required": true,
+      "serial_regex": "^[0-9A-F]{20}$"
+    },
+    {
+      "name": "Kingston DataTraveler 3.0",
+      "vid": "0951", "pid": "1666",
+      "manufacturer": "Kingston", "product": "DataTraveler 3.0",
+      "bcd_device": ["1.00", "1.10", "0.01"],
+      "min_bcd_usb": "2.00",
+      "interfaces": ["mass_storage"],
+      "serial_required": true,
+      "serial_regex": "^[0-9A-F]{12,24}$"
+    },
+    {
+      "name": "Alcor Micro flash drive",
+      "vid": "058f", "pid": "6387",
+      "manufacturer": "Generic", "product": "Mass Storage",
+      "bcd_device": ["1.00", "1.01", "1.03"],
+      "interfaces": ["mass_storage"],
+      "serial_required": true,
+      "serial_regex": "^[0-9A-F]{8,16}$"
+    },
+    {
+      "name": "Logitech USB Keyboard K120",
+      "vid": "046d", "pid": "c31c",
+      "manufacturer": "Logitech", "product": "USB Keyboard",
+      "bcd_device": ["64.00", "64.02", "64.03"],
+      "interfaces": ["hid_keyboard", "hid"],
+      "serial_required": false
+    }
+  ],
+  "known_bad": [
+    {"vid": "16c0", "pid": "0482", "label": "Teensy (PJRC) keyboard/mouse firmware - programmable HID injector"},
+    {"vid": "16c0", "pid": "0483", "label": "Teensy (PJRC) serial firmware - programmable microcontroller"},
+    {"vid": "16d0", "pid": "0753", "label": "Digispark (micronucleus) - common BadUSB board"},
+    {"vid": "2341", "pid": "8036", "label": "Arduino Leonardo - native USB HID capable board"},
+    {"vid": "2341", "pid": "8037", "label": "Arduino Micro - native USB HID capable board"}
+  ],
+  "policy": {
+    "office_hours": ["08:00", "20:00"],
+    "storage_classes": ["mass_storage"]
+  }
+}

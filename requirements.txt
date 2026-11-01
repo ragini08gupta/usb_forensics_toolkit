@@ -1,2 +1,6 @@
 # Python packages (system tools needed too: sudo apt install sleuthkit mtools dosfstools sqlite3)
-pytsk3
+pytsk3            # Sleuth Kit bindings: file system analysis and deleted-file recovery
+flask>=2.3        # investigation dashboard
+reportlab>=4.0    # PDF forensic report
+scapy>=2.5        # usbmon pcap reading (optional: a built-in reader is used if missing)
+pyusb>=1.2        # live USB enumeration outside Linux (optional)

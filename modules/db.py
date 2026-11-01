@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS alerts(
 CREATE TABLE IF NOT EXISTS custody_log(
     id INTEGER PRIMARY KEY, case_id INTEGER, evidence_id INTEGER,
     ts TEXT, examiner TEXT, action TEXT, details TEXT);
+CREATE TABLE IF NOT EXISTS volume(
+    id INTEGER PRIMARY KEY, case_id INTEGER, fs_type TEXT, oem_name TEXT,
+    volume_serial TEXT, label TEXT, bytes_per_sector INTEGER,
+    cluster_size INTEGER, total_bytes INTEGER, source TEXT);
+CREATE TABLE IF NOT EXISTS reports(
+    id INTEGER PRIMARY KEY, case_id INTEGER, path TEXT, sha256 TEXT,
+    created TEXT, examiner TEXT);
 """
 
 # Columns added to the original evidence table by writeblock.py (Vijay).
@@ -41,22 +48,58 @@ EVIDENCE_EXTRA_COLUMNS = {
     "protection": "TEXT",          # which safeguards were actually applied
 }
 
+# Phase 4/5 additions. Older case.db files are migrated in place.
+EXTRA_COLUMNS = {
+    "evidence": EVIDENCE_EXTRA_COLUMNS,
+    "files": {
+        "inode": "INTEGER",
+        "sha256": "TEXT",            # hash of the file content (live or recovered)
+        "md5": "TEXT",
+        "session_id": "INTEGER",     # usb_events.id the file was written during (created time)
+        "copy_indicator": "TEXT",    # e.g. "created after modified: copied onto the volume"
+    },
+    "usb_events": {
+        "port": "TEXT",
+        "bcd_device": "TEXT",
+        "bcd_usb": "TEXT",
+        "interfaces": "TEXT",        # comma list: mass_storage, hid_keyboard, ...
+        "serial_index": "INTEGER",   # iSerialNumber string index (0 = device has no serial)
+        "block_device": "TEXT",      # e.g. sdb
+        "capacity_bytes": "INTEGER",
+        "sources": "TEXT",           # kernel_log, usbmon, sysfs
+        "score": "INTEGER",          # impersonation risk score
+        "verdict": "TEXT",           # GENUINE / UNVERIFIED / SUSPICIOUS / LIKELY_SPOOFED
+        "reasons": "TEXT",
+        "profile": "TEXT",           # matched known-good profile name
+        "after_hours": "INTEGER",
+        "is_evidence_device": "INTEGER",
+        "disconnect_note": "TEXT",   # inferred / still connected at end of log
+    },
+    "alerts": {
+        "category": "TEXT",          # impersonation / policy / file / integrity
+        "ref": "TEXT",               # what the alert is about (session id, path, ...)
+        "ts": "TEXT",
+    },
+}
+
 
 def _add_missing_columns(conn):
     """Older case.db files were created before the new columns existed."""
-    existing = {r["name"] for r in conn.execute("PRAGMA table_info(evidence)")}
-    for col, typ in EVIDENCE_EXTRA_COLUMNS.items():
-        if col not in existing:
-            conn.execute(f"ALTER TABLE evidence ADD COLUMN {col} {typ}")
+    for table, cols in EXTRA_COLUMNS.items():
+        existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        for col, typ in cols.items():
+            if col not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
     conn.commit()
 
 
-def get_conn(path="case.db"):
-    conn = sqlite3.connect(path)
+def get_conn(path="case.db", check_same_thread=True):
+    conn = sqlite3.connect(path, check_same_thread=check_same_thread)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
     _add_missing_columns(conn)
     return conn
+
 
 def new_case(conn, name, examiner):
     cur = conn.execute(
@@ -64,3 +107,10 @@ def new_case(conn, name, examiner):
         (name, examiner, datetime.now(timezone.utc).isoformat()))
     conn.commit()
     return cur.lastrowid
+
+
+def add_alert(conn, case_id, severity, category, verdict, details, ref=None, ts=None):
+    conn.execute(
+        "INSERT INTO alerts(case_id,severity,category,verdict,details,ref,ts) "
+        "VALUES(?,?,?,?,?,?,?)", (case_id, severity, category, verdict, details, ref, ts))
+    conn.commit()

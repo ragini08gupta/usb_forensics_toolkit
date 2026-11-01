@@ -1,0 +1,99 @@
+test_01_sessions_and_fields (test_final.TestDeviceLog.test_01_sessions_and_fields) ... ok
+test_02_old_style_log_still_parses (test_final.TestDeviceLog.test_02_old_style_log_still_parses)
+The prototype's log format (no strings/interfaces lines) must still work. ... ok
+test_07_genuine (test_final.TestImpersonation.test_07_genuine) ... ok
+test_08_badusb_storage_claim_with_keyboard (test_final.TestImpersonation.test_08_badusb_storage_claim_with_keyboard) ... ok
+test_09_known_attack_board (test_final.TestImpersonation.test_09_known_attack_board) ... ok
+test_10_manufacturer_mismatch_is_suspicious (test_final.TestImpersonation.test_10_manufacturer_mismatch_is_suspicious) ... ok
+test_11_cloned_serial (test_final.TestImpersonation.test_11_cloned_serial) ... ok
+test_12_unknown_device (test_final.TestImpersonation.test_12_unknown_device) ... ok
+test_13_genuine_keyboard_not_flagged (test_final.TestImpersonation.test_13_genuine_keyboard_not_flagged) ... ok
+test_14_scenario_verdicts_and_evidence_device (test_final.TestImpersonation.test_14_scenario_verdicts_and_evidence_device) ... ok
+test_27_setro_on_regular_file_is_harmless (test_final.TestMisc.test_27_setro_on_regular_file_is_harmless) ... ok
+test_28_old_database_is_migrated (test_final.TestMisc.test_28_old_database_is_migrated) ... ok
+test_29_profiles_file_is_valid (test_final.TestMisc.test_29_profiles_file_is_valid) ... ok
+test_20_what_was_copied_and_when (test_final.TestPipelineReportDashboard.test_20_what_was_copied_and_when) ... ok
+test_21_alerts (test_final.TestPipelineReportDashboard.test_21_alerts) ... ok
+test_22_scenario_a_has_no_alerts (test_final.TestPipelineReportDashboard.test_22_scenario_a_has_no_alerts) ... ok
+test_23_report_pdf_and_custody (test_final.TestPipelineReportDashboard.test_23_report_pdf_and_custody) ... ok
+test_24_dashboard_pages (test_final.TestPipelineReportDashboard.test_24_dashboard_pages) ... ok
+test_25_dashboard_recovered_download (test_final.TestPipelineReportDashboard.test_25_dashboard_recovered_download) ... ok
+test_26_dashboard_rejects_arbitrary_paths_and_reverifies (test_final.TestPipelineReportDashboard.test_26_dashboard_rejects_arbitrary_paths_and_reverifies) ... ok
+test_30_csrf_required (test_final.TestPipelineReportDashboard.test_30_csrf_required) ... ok
+test_31_report_history_and_stale_report (test_final.TestPipelineReportDashboard.test_31_report_history_and_stale_report) ... /usr/local/lib/python3.13/copy.py:248: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f584f0be200>
+  def _reconstruct(x, memo, func, args,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/copy.py:248: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f584f0be6b0>
+  def _reconstruct(x, memo, func, args,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/copy.py:248: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f584f0bed40>
+  def _reconstruct(x, memo, func, args,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_15_identify_block_device (test_final.TestSysfs.test_15_identify_block_device) ... ok
+test_16_live_enumeration_flags_rogue (test_final.TestSysfs.test_16_live_enumeration_flags_rogue) ... ok
+test_03_capture_with_scapy (test_final.TestUsbCapture.test_03_capture_with_scapy) ... ok
+test_04_capture_without_scapy (test_final.TestUsbCapture.test_04_capture_without_scapy) ... ok
+test_05_merge_into_log_sessions (test_final.TestUsbCapture.test_05_merge_into_log_sessions) ... ok
+test_06_unmatched_capture_becomes_session (test_final.TestUsbCapture.test_06_unmatched_capture_becomes_session) ... ok
+test_17_volume_info (test_final.TestVolumeAndTimes.test_17_volume_info) ... ok
+test_18_story_timestamps_and_copy_indicator (test_final.TestVolumeAndTimes.test_18_story_timestamps_and_copy_indicator) ... ok
+test_19_images_are_reproducible (test_final.TestVolumeAndTimes.test_19_images_are_reproducible)
+Two rebuilds give byte-identical images (fixed volume id + stamped times). ... ok
+test_genuine_device_not_blamed_for_its_clone (test_review_fixes.TestR10R11Scoring.test_genuine_device_not_blamed_for_its_clone) ... ok
+test_keyboard_matched_by_port_not_model (test_review_fixes.TestR10R11Scoring.test_keyboard_matched_by_port_not_model)
+Finding 11: two sticks of the same model; only the one that typed is a keyboard. ... ok
+test_unknown_serial_is_not_scored_as_missing (test_review_fixes.TestR10R11Scoring.test_unknown_serial_is_not_scored_as_missing) ... ok
+test_whole_disk_image_with_mbr (test_review_fixes.TestR12PartitionedImage.test_whole_disk_image_with_mbr)
+Finding 12: a /dev/sdX image has an MBR; the FAT starts at sector 2048. ... ok
+test_analysis_steps_in_custody_and_files_next_to_db (test_review_fixes.TestR13R14CustodyAndPaths.test_analysis_steps_in_custody_and_files_next_to_db) ... ok
+test_ist_machine_gives_same_findings (test_review_fixes.TestR1TimezoneIndependence.test_ist_machine_gives_same_findings)
+Finding 1: on an IST (or any non-UTC) PC the file times used to shift ... ok
+test_usb_strings_cannot_break_out_of_script (test_review_fixes.TestR2DashboardXss.test_usb_strings_cannot_break_out_of_script)
+Finding 2: a BadUSB product string like </script><script>... was ... ok
+test_html_and_path_names_are_safe (test_review_fixes.TestR2R5HostileFileNames.test_html_and_path_names_are_safe)
+Findings 2 and 5: names from the evidence must never become markup ... ok
+test_safe_name_caps_length (test_review_fixes.TestR2R5HostileFileNames.test_safe_name_caps_length) ... ok
+test_files_in_deleted_folder_are_found_and_recovered (test_review_fixes.TestR3DeletedFolders.test_files_in_deleted_folder_are_found_and_recovered)
+Finding 3: deleting a whole folder used to hide everything in it. ... ok
+test_missing_disconnect_does_not_swallow_later_sessions (test_review_fixes.TestR4OpenSessions.test_missing_disconnect_does_not_swallow_later_sessions)
+Finding 4: a session without a disconnect line claimed every later file. ... ok
+test_dmesg_T_and_iso_carry_their_year (test_review_fixes.TestR6LogFormats.test_dmesg_T_and_iso_carry_their_year) ... ok
+test_feb_29_is_skipped_not_fatal (test_review_fixes.TestR6LogFormats.test_feb_29_is_skipped_not_fatal) ... ok
+test_raw_dmesg_warns (test_review_fixes.TestR6LogFormats.test_raw_dmesg_warns) ... ok
+test_capture_strings_must_match_log (test_review_fixes.TestR8Captures.test_capture_strings_must_match_log) ... ok
+test_capture_time_uses_log_offset (test_review_fixes.TestR8Captures.test_capture_time_uses_log_offset)
+Finding 7: pcap times are UTC; +0530 maps them onto the IST log. ... ok
+test_garbage_capture_is_a_clean_error (test_review_fixes.TestR8Captures.test_garbage_capture_is_a_clean_error) ... ok
+test_truncated_capture_never_yields_half_a_serial (test_review_fixes.TestR8Captures.test_truncated_capture_never_yields_half_a_serial) ... WARNING: Pcap: packet has been truncated
+ok
+test_01_successful_acquisition_hashes_match (test_writeblock.TestAcquisition.test_01_successful_acquisition_hashes_match) ... ok
+test_02_original_evidence_preserved (test_writeblock.TestAcquisition.test_02_original_evidence_preserved) ... ok
+test_03_copy_is_read_only_and_no_partial_left (test_writeblock.TestAcquisition.test_03_copy_is_read_only_and_no_partial_left) ... ok
+test_04_chain_of_custody_recorded (test_writeblock.TestAcquisition.test_04_chain_of_custody_recorded) ... ok
+test_05_hash_mismatch_detected (test_writeblock.TestAcquisition.test_05_hash_mismatch_detected) ... ok
+test_06_source_changed_during_acquisition_detected (test_writeblock.TestAcquisition.test_06_source_changed_during_acquisition_detected) ... ok
+test_07_missing_source (test_writeblock.TestAcquisition.test_07_missing_source) ... ok
+test_08_invalid_sources (test_writeblock.TestAcquisition.test_08_invalid_sources) ... ok
+test_09_existing_destination_not_overwritten (test_writeblock.TestAcquisition.test_09_existing_destination_not_overwritten) ... ok
+test_10_repeated_acquisition (test_writeblock.TestAcquisition.test_10_repeated_acquisition) ... ok
+test_11_leftover_partial_file_is_not_touched (test_writeblock.TestAcquisition.test_11_leftover_partial_file_is_not_touched) ... ok
+test_12_io_error_during_copy_cleans_up (test_writeblock.TestAcquisition.test_12_io_error_during_copy_cleans_up) ... ok
+test_13_unknown_case_rejected (test_writeblock.TestAcquisition.test_13_unknown_case_rejected) ... ok
+test_14_reverify_detects_later_tampering (test_writeblock.TestAcquisition.test_14_reverify_detects_later_tampering) ... ok
+test_23_broken_output_does_not_change_outcome (test_writeblock.TestAcquisition.test_23_broken_output_does_not_change_outcome) ... ok
+test_18_old_case_db_is_upgraded (test_writeblock.TestDatabaseCompatibility.test_18_old_case_db_is_upgraded) ... ok
+test_19_scenario_b_on_acquired_copy (test_writeblock.TestIntegrationWithForensics.test_19_scenario_b_on_acquired_copy) ... ok
+test_20_scenario_a_clean (test_writeblock.TestIntegrationWithForensics.test_20_scenario_a_clean) ... ok
+test_21_main_runs_twice_and_verifies (test_writeblock.TestMainPipeline.test_21_main_runs_twice_and_verifies) ... ok
+test_22_main_stops_on_missing_source (test_writeblock.TestMainPipeline.test_22_main_stops_on_missing_source) ... ok
+test_24_main_missing_usb_log_clean_error (test_writeblock.TestMainPipeline.test_24_main_missing_usb_log_clean_error) ... ok
+test_25_main_non_disk_image_clean_error (test_writeblock.TestMainPipeline.test_25_main_non_disk_image_clean_error) ... ok
+test_15_write_probe_blocks_read_only_descriptor (test_writeblock.TestWriteProtection.test_15_write_probe_blocks_read_only_descriptor) ... ok
+test_16_write_probe_rejects_writable_descriptor (test_writeblock.TestWriteProtection.test_16_write_probe_rejects_writable_descriptor) ... ok
+test_17_hash_file_matches_hashlib (test_writeblock.TestWriteProtection.test_17_hash_file_matches_hashlib) ... ok
+
+----------------------------------------------------------------------
+Ran 74 tests in 17.707s
+
+OK

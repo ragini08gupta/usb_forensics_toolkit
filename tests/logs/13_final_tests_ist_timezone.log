@@ -1,0 +1,15 @@
+...................../usr/local/lib/python3.13/copy.py:248: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f30b70be200>
+  def _reconstruct(x, memo, func, args,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/copy.py:248: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f30b70be6b0>
+  def _reconstruct(x, memo, func, args,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/copy.py:248: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f30b70bed40>
+  def _reconstruct(x, memo, func, args,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...........................WARNING: Pcap: packet has been truncated
+..........................
+----------------------------------------------------------------------
+Ran 74 tests in 16.849s
+
+OK

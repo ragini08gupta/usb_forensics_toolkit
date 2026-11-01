@@ -2,3 +2,9 @@
 - Day 2-5: db.py, forensics.py (listing, recovery, suspicious rules) working on Scenario B (Ragini)
 - 2026-10-09: timeline.py and main.py working end to end on Scenario B (Ragini)
 - 2026-10-11: writeblock.py (read-only acquisition, SHA-256/MD5 verification, chain-of-custody log), integration into main.py, tests/test_writeblock.py (Vijay)
+- Final phase (after progress evaluation): completed the remaining synopsis scope
+  - Scenario data: reproducible images with story timestamps (`set_fat_times.py`, `times_*.json`), richer kernel logs (`usb.log`, `usb_a.log`), usbmon capture generator (`make_usb_capture.py`)
+  - Ragini: `device_info.py` (interfaces, disk/capacity, sysfs identification), `forensics.py` (file hashes, copy indicator, volume identity), `timeline.py` (file-to-session correlation, flagged-copy alerts, custody events)
+  - Vijay: `impersonation.py` + `data/known_good.json` (rule scoring, verdicts, after-hours policy), `usb_capture.py` (Scapy usbmon descriptor decoding), `live_usb.py` (live/watch mode), `writeblock.py --setro`
+  - Shared: `pipeline.py`, `report.py` (ReportLab PDF), `dashboard/` (Flask), `tests/test_final.py` (29 tests), README and flowcharts
+- Final code review: 14 findings from an independent review fixed (tests/ground_truth.md lists each one with its regression test in tests/test_review_fixes.py)

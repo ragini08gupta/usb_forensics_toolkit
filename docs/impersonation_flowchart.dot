@@ -1,0 +1,28 @@
+digraph impersonation {
+  graph [rankdir=TB, bgcolor="white", pad="0.5", nodesep="0.6", ranksep="0.45", dpi=200];
+  node  [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=15,
+         fillcolor="#EEEDFE", color="#534AB7", fontcolor="#3C3489", penwidth=1.2, width=3.8, height=0.75];
+  edge  [color="#888888", penwidth=1.6, arrowhead=vee, fontname="DejaVu Sans", fontsize=13, fontcolor="#555555"];
+
+  src   [label=<<b>Collect device observations</b><br/><font point-size="12">kernel log sessions  +  usbmon descriptors (Scapy)<br/>or live sysfs / pyusb enumeration</font>>, fillcolor="#F1EFE8", color="#5F5E5A", fontcolor="#2C2C2A"];
+  bad   [label=<<b>VID:PID on known-bad list?</b><br/><font point-size="12">Teensy, Digispark, Arduino HID boards</font>>, fillcolor="#FAEEDA", color="#854F0B", fontcolor="#633806"];
+  prof  [label=<<b>Known-good profile for VID:PID?</b><br/><font point-size="12">data/known_good.json</font>>, fillcolor="#FAEEDA", color="#854F0B", fontcolor="#633806"];
+  cmp   [label=<<b>Compare with profile</b><br/><font point-size="12">strings (+40/+30) · HID keyboard on storage (+60)<br/>missing serial (+25) · serial format (+20)<br/>missing storage iface (+20) · bcdUSB (+15) · bcdDevice (+10)</font>>];
+  unk   [label=<<b>No profile (+15)</b><br/><font point-size="12">storage + keyboard composite (+60)</font>>];
+  cross [label=<<b>Cross-session checks</b><br/><font point-size="12">same serial on another VID:PID (+40)<br/>keyboard session &lt; 2 min (+10)</font>>];
+  score [label=<<b>Score</b>>, fillcolor="#FAEEDA", color="#854F0B", fontcolor="#633806"];
+  g     [label=<<b>GENUINE / UNVERIFIED</b><br/><font point-size="12">score &lt; 25</font>>, fillcolor="#E1F5EE", color="#0F6E56", fontcolor="#085041"];
+  s     [label=<<b>SUSPICIOUS</b><br/><font point-size="12">25 to 59 · MEDIUM alert</font>>, fillcolor="#FAEEDA", color="#854F0B", fontcolor="#633806"];
+  l     [label=<<b>LIKELY_SPOOFED</b><br/><font point-size="12">&#8805; 60 or known-bad · HIGH alert</font>>, fillcolor="#FCEBEB", color="#A32D2D", fontcolor="#791F1F"];
+  out   [label=<<b>usb_events verdict + alerts</b><br/><font point-size="12">timeline, dashboard, PDF report</font>>, fillcolor="#F1EFE8", color="#5F5E5A", fontcolor="#2C2C2A"];
+
+  src -> bad;
+  bad -> l [label="  yes (+100)"];
+  bad -> prof [label="  no"];
+  prof -> cmp [label="  yes"];
+  prof -> unk [label="  no"];
+  cmp -> cross; unk -> cross; cross -> score;
+  score -> g; score -> s; score -> l;
+  g -> out; s -> out; l -> out;
+  {rank=same; g; s; l}
+}

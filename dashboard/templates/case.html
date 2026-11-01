@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+{% set ev = s.evidence %}
+{% block title %}Case {{ case_id }} | USB Forensics{% endblock %}
+{% block actions %}
+  <a class="btn" href="{{ url_for('index') }}">All cases</a>
+  <a class="btn" href="{{ url_for('timeline_csv', case_id=case_id) }}">Download timeline (CSV)</a>
+  <a class="btn primary" href="{{ url_for('report_pdf', case_id=case_id) }}">Forensic report (PDF)</a>
+{% endblock %}
+{% block body %}
+<h1>Case {{ case_id }}: {{ s.case.name }}</h1>
+<div class="meta">
+  <span>Examiner <b>{{ s.case.examiner }}</b></span>
+  <span>Opened <b>{{ s.case.created|t19 }} UTC</b></span>
+  <span>Source <b class="mono">{{ ev.source_path if ev else '-' }}</b></span>
+</div>
+
+{% set rev = s.custody|selectattr('action', 'in', ['REVERIFY_PASS','REVERIFY_FAIL'])|list %}
+{% set high = s.alerts|selectattr('severity', 'equalto', 'HIGH')|list %}
+{% set medium = s.alerts|selectattr('severity', 'equalto', 'MEDIUM')|list %}
+<div class="cards">
+  <a class="card {{ 'ok' if ev and ev.status == 'VERIFIED' and (not rev or rev[-1].action == 'REVERIFY_PASS') else 'bad' }}" href="#custody">
+    <div class="k">Evidence integrity</div>
+    <div class="v">{{ ev.status|label if ev else '-' }}</div>
+    <div class="d">SHA-256 {{ ev.sha256_after[:12] if ev and ev.sha256_after else '-' }}…{% if rev %}<br>Re-check {{ 'passed' if rev[-1].action == 'REVERIFY_PASS' else 'failed' }}{% endif %}</div>
+    <span class="go">View hashes and custody</span>
+  </a>
+  <a class="card {{ 'bad' if s.rogue else 'ok' }}" href="#devices">
+    <div class="k">Rogue or spoofed devices</div>
+    <div class="v">{{ s.rogue|length }}</div>
+    <div class="d">Out of {{ s.sessions|length }} USB sessions checked</div>
+    <span class="go">View devices</span>
+  </a>
+  <a class="card {{ 'warn' if s.suspicious else 'ok' }}" href="#files">
+    <div class="k">Files on the device</div>
+    <div class="v">{{ s.files|length }}</div>
+    <div class="d">{{ s.deleted|length }} deleted, {{ s.deleted|selectattr('recovered_path')|list|length }} recovered<br>{{ s.suspicious|length }} flagged</div>
+    <span class="go">View file activity</span>
+  </a>
+  <a class="card {{ 'bad' if high else ('warn' if s.alerts else 'ok') }}" href="#suspicious">
+    <div class="k">Alerts</div>
+    <div class="v">{{ s.alerts|length }}</div>
+    <div class="d">{{ high|length }} high, {{ medium|length }} medium</div>
+    <span class="go">View alerts</span>
+  </a>
+</div>
+
+<div class="answers">
+  <section>
+    <h2>Was the evidence device genuine?</h2>
+    <p>{{ s.device_answer }}</p>
+    {% for d in s.rogue %}
+      <div class="item"><span class="badge {{ d.verdict }}">{{ d.verdict|label }}</span>
+        Session #{{ d.id }}, <b>{{ d.vid }}:{{ d.pid }}</b>, claiming to be “{{ d.manufacturer }} {{ d.product }}”.
+        <div class="dim">Connected {{ d.connected|t19 }}, risk score {{ d.score }}</div></div>
+    {% endfor %}
+  </section>
+  <section>
+    <h2>What was copied onto it, and when?</h2>
+    {% for sid, files in s.files_by_session.items() %}{% set x = sess[sid] %}
+      <div class="item"><b>Session #{{ sid }}</b>, {{ x.connected|t19 }} to {{ (x.disconnected|t19)[11:] }}
+        {% if x.after_hours %}<span class="badge bad">After hours</span>{% endif %}
+        <div class="files">{% for f in files %}<span class="{{ 'flag' if f.suspicious else 'dim' }}">{{ f.name }}{% if f.deleted %} (deleted){% endif %}</span>{{ ', ' if not loop.last }}{% endfor %}</div>
+      </div>
+    {% else %}<p class="dim">No file could be tied to a logged USB session.</p>{% endfor %}
+  </section>
+</div>
+
+{% set tabs = [('devices','Device identification', s.sessions|length), ('history','Connection history', s.sessions|length),
+               ('files','File activity', s.files|length), ('timeline','Timeline reconstruction', tl|length),
+               ('suspicious','Suspicious files', s.suspicious|length), ('custody','Evidence & custody', s.custody|length)] %}
+<nav class="tabs" role="tablist" id="tabs">
+  {% for id, label, n in tabs %}
+  <button role="tab" data-tab="{{ id }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ label }}<span class="n">{{ n }}</span></button>
+  {% endfor %}
+</nav>
+
+<!-- 1. Device identification -->
+<section class="tabpanel stack" id="tab-devices">
+  {% if s.volume %}
+  <div class="panel">
+    <h2>Imaged volume</h2>
+    <div class="scroll"><table>
+      <tr><th>File system</th><th>Volume serial</th><th>Label</th><th>OEM</th><th>Sector / cluster</th><th>Size</th></tr>
+      <tr><td>{{ s.volume.fs_type }}</td><td class="mono">{{ s.volume.volume_serial }}</td><td>{{ s.volume.label }}</td>
+          <td>{{ s.volume.oem_name }}</td><td>{{ s.volume.bytes_per_sector }} / {{ s.volume.cluster_size }} B</td><td>{{ s.volume.total_bytes|mib }}</td></tr>
+    </table></div>
+  </div>
+  {% endif %}
+  <div class="devices">
+    {% for d in s.sessions %}
+    <article class="dev {{ d.verdict }}">
+      <div class="dev-head">
+        <div class="name">#{{ d.id }} {{ d.manufacturer or 'Unknown maker' }} {{ d.product or '' }}
+          {% if d.is_evidence_device %}<span class="tag"><span class="badge grey">Imaged device</span></span>{% endif %}</div>
+        <span class="badge {{ d.verdict }}" title="{{ d.verdict }}">{{ d.verdict|label }}, score {{ d.score }}</span>
+      </div>
+      <dl>
+        <dt>VID:PID</dt><dd class="mono">{{ d.vid }}:{{ d.pid }}</dd>
+        <dt>Serial</dt><dd class="mono">{{ d.serial or '(none)' }}{% if d.serial_index == 0 %}, iSerialNumber=0{% endif %}</dd>
+        <dt>bcdDevice / USB</dt><dd>{{ d.bcd_device or '-' }} / {{ d.bcd_usb or '-' }}</dd>
+        <dt>Interfaces</dt><dd>{{ d.interfaces or '-' }}</dd>
+        <dt>Profile</dt><dd>{{ d.profile or 'No known-good profile' }}</dd>
+        <dt>Evidence from</dt><dd>{{ d.sources }}</dd>
+      </dl>
+      {% if d.reasons %}<ul class="reasons">{% for r in d.reasons.split('\n') %}<li>{{ r }}</li>{% endfor %}</ul>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  <p class="note">How the score is read: below 25 is genuine, 25 to 59 is suspicious, 60 or more is likely spoofed. Known-good fingerprints are in <code>data/known_good.json</code>.</p>
+</section>
+
+<!-- 2. Connection history -->
+<section class="tabpanel stack" id="tab-history" hidden>
+  <div class="panel">
+    <h2>USB sessions over time</h2>
+    <div class="chart" id="chart"></div>
+    <div class="legend"><span><i style="background:var(--ok)"></i>Genuine</span><span><i style="background:var(--warn)"></i>Suspicious</span>
+      <span><i style="background:var(--bad)"></i>Likely spoofed</span><span><i style="background:var(--grey)"></i>Unverified</span>
+      <span><i style="background:var(--shade);border:1px solid var(--line)"></i>Outside office hours</span>
+      <span>Short ticks above a bar are files written to the imaged device (red means flagged)</span></div>
+  </div>
+  <div class="panel scroll"><table>
+    <tr><th>#</th><th>Device</th><th>Serial</th><th>Port</th><th>Disk</th><th>Connected</th><th>Disconnected</th><th>Files written</th><th>Verdict</th></tr>
+    {% for d in s.sessions %}
+    <tr class="{{ 'hl' if d.verdict == 'LIKELY_SPOOFED' }}">
+      <td>{{ d.id }}</td><td>{{ d.vid }}:{{ d.pid }} {{ d.product or '' }}</td><td class="mono">{{ d.serial or '-' }}</td>
+      <td>{{ d.port or '-' }}</td><td>{{ d.block_device or '-' }} {% if d.capacity_bytes %}<span class="muted nowrap">{{ d.capacity_bytes|mib }}</span>{% endif %}</td>
+      <td style="white-space:nowrap">{{ d.connected|t19 }} {% if d.after_hours %}<div><span class="badge bad">After hours</span></div>{% endif %}</td>
+      <td style="white-space:nowrap">{{ d.disconnected|t19 }}{% if d.disconnect_note %}<div class="muted" style="font-size:14px;white-space:normal">{{ d.disconnect_note }}</div>{% endif %}</td>
+      <td>{{ (s.files_by_session.get(d.id) or [])|length or '-' }}</td>
+      <td><span class="badge {{ d.verdict }}">{{ d.verdict|label }}</span></td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</section>
+
+<!-- 3. File activity -->
+<section class="tabpanel" id="tab-files" hidden>
+  <div class="panel">
+    <div class="toolbar">
+      <input type="search" placeholder="Search file names" aria-label="Search files" data-filter="files-table">
+      <span class="label">Show</span>
+      <button class="chip on" data-files="all">All</button><button class="chip" data-files="deleted">Deleted</button>
+      <button class="chip" data-files="hidden">Hidden</button><button class="chip" data-files="flagged">Flagged</button>
+      <button class="chip" data-files="copied">Copied onto device</button>
+    </div>
+    <div class="scroll"><table id="files-table">
+      <tr><th>Path</th><th>Size (bytes)</th><th>Created (arrived)</th><th>Modified</th><th>Accessed</th><th>Session</th><th>State</th><th>SHA-256</th></tr>
+      {% for f in s.files %}
+      <tr data-deleted="{{ f.deleted }}" data-hidden="{{ f.hidden }}" data-flagged="{{ f.suspicious }}" data-copied="{{ 1 if f.copy_indicator else 0 }}">
+        <td><b>{{ f.path }}</b></td><td>{{ '{:,}'.format(f.size) }}</td><td style="white-space:nowrap">{{ f.created|t19 }}</td><td style="white-space:nowrap">{{ f.modified|t19 }}</td>
+        <td style="white-space:nowrap">{{ (f.accessed|t19)[:10] }}</td>
+        <td>{% if f.session_id %}#{{ f.session_id }}{% if sess[f.session_id].after_hours %} <span class="badge bad">After hours</span>{% endif %}{% else %}-{% endif %}</td>
+        <td>{% if f.deleted %}<span class="badge warn">Deleted</span> {% endif %}{% if f.hidden %}<span class="badge grey">Hidden</span> {% endif %}{% if f.suspicious %}<span class="badge bad">Flagged</span>{% endif %}
+            {% if f.copy_indicator %}<div class="muted" style="font-size:14px">Copied onto device</div>{% endif %}</td>
+        <td class="mono" title="{{ f.sha256 }}">{{ (f.sha256 or '')[:12] }}…</td>
+      </tr>
+      {% endfor %}
+    </table></div>
+    <p class="note">FAT keeps a file's original <i>modified</i> time when it is copied but gives it a new <i>created</i> time. So when created is later than modified, the file was copied onto the device. FAT does not record when a file was deleted.</p>
+  </div>
+</section>
+
+<!-- 4. Timeline -->
+<section class="tabpanel" id="tab-timeline" hidden>
+  <div class="panel">
+    <div class="toolbar">
+      <input type="search" placeholder="Search events" aria-label="Search events" data-filter="tl-table">
+      <span class="label">Sources</span>
+      <button class="chip on" data-src="usb_log">USB log</button><button class="chip on" data-src="filesystem">File system</button>
+      <button class="chip" data-src="custody">Custody (UTC)</button>
+      <button class="chip" data-kind="FILE_ACCESSED">Access dates</button>
+    </div>
+    <div class="scroll"><table id="tl-table">
+      <tr><th>Time</th><th>Source</th><th>Event</th><th>Detail</th></tr>
+      {% for r in tl %}
+      <tr data-src="{{ r.source.split('(')[0] }}" data-kind="{{ r.kind }}" class="{{ 'hl' if 'LIKELY_SPOOFED' in r.description or 'SUSPICIOUS]' in r.description }}">
+        <td style="white-space:nowrap">{{ r.ts|t19 }}</td><td>{{ r.source }}</td><td>{{ r.kind }}</td><td class="wrap-text">{{ r.description }}</td></tr>
+      {% endfor %}
+    </table></div>
+  </div>
+</section>
+
+<!-- 5. Suspicious files -->
+<section class="tabpanel stack" id="tab-suspicious" hidden>
+  <div class="panel scroll">
+    <h2>Flagged files</h2>
+    {% if s.suspicious %}
+    <table>
+      <tr><th>File</th><th>Why it was flagged</th><th>Written</th><th>Recovered copy</th><th>SHA-256</th></tr>
+      {% for f in s.suspicious %}
+      <tr><td><b>{{ f.path }}</b>{% if f.deleted %} <span class="badge warn">Deleted</span>{% endif %}{% if f.hidden %} <span class="badge grey">Hidden</span>{% endif %}</td>
+        <td>{% for r in f.reasons.split('; ') %}<div>{{ r }}</div>{% endfor %}</td>
+        <td style="white-space:nowrap">{{ f.created|t19 }}{% if f.session_id %}<div class="muted">Session #{{ f.session_id }}</div>{% endif %}</td>
+        <td>{% if f.recovered_path %}<a class="btn" href="{{ url_for('recovered', case_id=case_id, file_id=f.id) }}">Download</a>{% else %}-{% endif %}</td>
+        <td class="mono">{{ f.sha256 }}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}<p class="muted">No file met the suspicious-file rules.</p>{% endif %}
+    <p class="note">Rules: file contents that do not match the extension, the hidden attribute, entropy above 7.5 (encrypted or compressed), and confidential keywords in the name or content. Flags help the examiner decide where to look; they are not proof on their own.</p>
+  </div>
+  <div class="panel scroll">
+    <h2>All alerts</h2>
+    <table>
+      <tr><th>Severity</th><th>Category</th><th>Verdict</th><th>Details</th></tr>
+      {% for a in s.alerts %}<tr><td><span class="badge {{ a.severity }}">{{ a.severity|label }}</span></td><td>{{ a.category }}</td><td>{{ a.verdict }}</td><td class="wrap-text">{{ a.details }}</td></tr>
+      {% else %}<tr><td colspan="4" class="muted">No alerts.</td></tr>{% endfor %}
+    </table>
+  </div>
+</section>
+
+<!-- 6. Evidence & custody -->
+<section class="tabpanel stack" id="tab-custody" hidden>
+  {% if ev %}
+  <div class="panel">
+    <div class="toolbar" style="justify-content:space-between"><h2 style="margin:0">Acquisition</h2>
+      <form method="post" action="{{ url_for('verify', case_id=case_id) }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn primary" type="submit">Re-verify working copy now</button></form></div>
+    <div class="scroll"><table class="kv">
+      <tr><td>Status</td><td><span class="badge {{ ev.status }}">{{ ev.status|label }}</span></td></tr>
+      <tr><td>Working copy</td><td class="mono">{{ ev.dest_path }} ({{ '{:,}'.format(ev.size_bytes or 0) }} bytes, read-only)</td></tr>
+      <tr><td>SHA-256 source, before and after</td><td class="mono">{{ ev.sha256_before }}<br>{{ ev.sha256_source_after }}</td></tr>
+      <tr><td>SHA-256 working copy</td><td class="mono">{{ ev.sha256_after }}</td></tr>
+      <tr><td>MD5 source and copy</td><td class="mono">{{ ev.md5 }}<br>{{ ev.md5_after }}</td></tr>
+      <tr><td>Write protection</td><td>{{ ev.protection }}</td></tr>
+    </table></div>
+  </div>
+  {% endif %}
+  <div class="panel scroll">
+    <h2>Chain of custody</h2>
+    <table>
+      <tr><th>Time (UTC)</th><th>Examiner</th><th>Action</th><th>Details</th></tr>
+      {% for c in s.custody %}<tr><td style="white-space:nowrap">{{ c.ts|t19 }}</td><td>{{ c.examiner }}</td>
+        <td><span class="badge {{ 'bad' if 'FAIL' in c.action or 'MISMATCH' in c.action else ('ok' if 'PASS' in c.action or c.action == 'VERIFIED' else 'grey') }}">{{ c.action }}</span></td><td class="mono">{{ c.details }}</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div class="panel scroll">
+    <h2>Generated reports</h2>
+    <table><tr><th>Created (UTC)</th><th>File</th><th>SHA-256</th></tr>
+      {% for r in reports %}<tr><td style="white-space:nowrap">{{ r.created|t19 }}</td><td class="mono">{{ r.path }}</td><td class="mono">{{ r.sha256 }}</td></tr>
+      {% else %}<tr><td colspan="3" class="muted">No report yet. Use "Forensic report (PDF)" at the top of the page.</td></tr>{% endfor %}
+    </table>
+    <form method="post" action="{{ url_for('regenerate_report', case_id=case_id) }}" style="margin:22px 0 0"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="btn" type="submit">Regenerate report</button></form>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script id="chart-data" type="application/json">{{ chart|tojson }}</script>
+<script>
+(function () {
+  // ---- tabs (remembers the last tab in the URL hash) ----
+  const tabs = document.querySelectorAll('.tabs button');
+  function show(id) {
+    tabs.forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
+    document.querySelectorAll('.tabpanel').forEach(p => p.hidden = p.id !== 'tab-' + id);
+    if (id === 'history') drawChart();
+  }
+  tabs.forEach(b => b.addEventListener('click', () => { show(b.dataset.tab); history.replaceState(null, '', '#' + b.dataset.tab); }));
+  function fromHash(scroll) { const h = location.hash.slice(1); if (h && document.getElementById('tab-' + h)) { show(h); if (scroll === true) document.getElementById('tabs').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'}); } }
+  window.addEventListener('hashchange', () => fromHash(true));
+  fromHash();
+
+  // ---- text filters ----
+  document.querySelectorAll('input[data-filter]').forEach(inp => inp.addEventListener('input', () => {
+    const q = inp.value.toLowerCase();
+    document.querySelectorAll('#' + inp.dataset.filter + ' tr:not(:first-child)').forEach(tr => {
+      tr.dataset.text = tr.textContent.toLowerCase().includes(q) ? '' : 'no'; apply();
+    });
+  }));
+
+  // ---- file chips ----
+  let fileMode = 'all';
+  document.querySelectorAll('[data-files]').forEach(c => c.addEventListener('click', () => {
+    document.querySelectorAll('[data-files]').forEach(x => x.classList.toggle('on', x === c));
+    fileMode = c.dataset.files; apply();
+  }));
+  // ---- timeline chips ----
+  document.querySelectorAll('[data-src],[data-kind]').forEach(c => { if (c.tagName === 'BUTTON') c.addEventListener('click', () => { c.classList.toggle('on'); apply(); }); });
+
+  function apply() {
+    document.querySelectorAll('#files-table tr:not(:first-child)').forEach(tr => {
+      const ok = fileMode === 'all' || tr.dataset[fileMode] === '1';
+      tr.hidden = !ok || tr.dataset.text === 'no';
+    });
+    const srcOn = new Set([...document.querySelectorAll('button[data-src].on')].map(b => b.dataset.src));
+    const showAccess = document.querySelector('button[data-kind="FILE_ACCESSED"]').classList.contains('on');
+    document.querySelectorAll('#tl-table tr:not(:first-child)').forEach(tr => {
+      tr.hidden = !srcOn.has(tr.dataset.src) || (tr.dataset.kind === 'FILE_ACCESSED' && !showAccess) || tr.dataset.text === 'no';
+    });
+  }
+  apply();
+
+  // ---- session chart (SVG, no external libraries) ----
+  const data = JSON.parse(document.getElementById('chart-data').textContent);
+  let drawn = false;
+  function drawChart() {
+    if (drawn) return; drawn = true;
+    const el = document.getElementById('chart');
+    const S = data.sessions.filter(s => s.start);
+    if (!S.length) { el.textContent = 'No sessions.'; return; }
+    const t = s => new Date(s.slice(0, 19) + 'Z').getTime();
+    let t0 = Math.min(...S.map(s => t(s.start))), t1 = Math.max(...S.map(s => s.end ? t(s.end) : t(s.start)));
+    t0 = Math.floor(t0 / 3.6e6) * 3.6e6; t1 = Math.ceil(t1 / 3.6e6) * 3.6e6 + 3.6e6;
+    const W = Math.max(820, el.clientWidth), LW = 270, lane = 40, H = S.length * lane + 48, PW = W - LW - 20;
+    const x = ms => LW + PW * (ms - t0) / (t1 - t0);
+    const col = {GENUINE: 'var(--ok)', SUSPICIOUS: 'var(--warn)', LIKELY_SPOOFED: 'var(--bad)', UNVERIFIED: 'var(--grey)'};
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', W); svg.setAttribute('height', H);
+    const add = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text) e.textContent = text; svg.appendChild(e); return e; };
+    // office hours shading (outside 08:00-20:00)
+    for (let h = t0; h < t1; h += 3.6e6) {
+      const hr = new Date(h).getUTCHours();
+      if (hr < 8 || hr >= 20) add('rect', {x: x(h), y: 4, width: x(h + 3.6e6) - x(h), height: H - 36, fill: 'var(--shade)'});
+    }
+    const hours = (t1 - t0) / 3.6e6, step = hours > 10 ? 2 : 1;
+    for (let k = 0; k <= hours; k += step) {
+      const h = t0 + k * 3.6e6;
+      add('line', {x1: x(h), x2: x(h), y1: 4, y2: H - 32, stroke: 'var(--line)'});
+      add('text', {x: x(h), y: H - 12, 'text-anchor': 'middle'}, String(new Date(h).getUTCHours()).padStart(2, '0') + ':00');
+    }
+    S.forEach((s, i) => {
+      const y = 8 + i * lane;
+      add('text', {x: 4, y: y + 21, class: 'lane-label'}, s.label.slice(0, 28) + (s.evidence ? ' (imaged)' : ''));
+      const xa = x(t(s.start)), xb = s.end ? x(t(s.end)) : LW + PW;
+      const r = add('rect', {x: xa, y: y + 8, width: Math.max(5, xb - xa), height: 18, rx: 3, class: 'bar', fill: col[s.verdict] || 'var(--grey)'});
+      const tt = document.createElementNS(ns, 'title');
+      tt.textContent = `${s.label}\n${s.start.slice(0,19)} to ${s.end ? s.end.slice(0,19) : 'still connected'}\n${s.verdict}`;
+      r.appendChild(tt);
+      data.files.filter(f => f.session === s.id).forEach(f => {
+        const fx = x(t(f.t));
+        const l = add('line', {x1: fx, x2: fx, y1: y + 1, y2: y + 8, stroke: f.suspicious ? 'var(--bad)' : 'var(--ink)', 'stroke-width': 2});
+        const ft = document.createElementNS(ns, 'title'); ft.textContent = `${f.name} written ${f.t.slice(11)}`; l.appendChild(ft);
+      });
+    });
+    el.appendChild(svg);
+  }
+  if (!document.getElementById('tab-history').hidden) drawChart();
+})();
+</script>
+{% endblock %}

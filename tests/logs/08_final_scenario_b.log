@@ -1,0 +1,121 @@
+[1/8] Acquiring evidence (software write-block + SHA-256/MD5)...
+  Hashing source before acquisition...
+  Software write-block : source opened O_RDONLY, write attempt BLOCKED (EBADF: descriptor opened O_RDONLY)
+  OS read-only status  : running as root: file permissions do NOT stop writes
+  Hardware blocker     : not used / not verified
+  Copying 67108864 bytes in 1024 KiB chunks...
+  Hashing acquired copy and re-hashing source...
+    [PASS] SHA-256 source == copy
+    [PASS] MD5     source == copy
+    [PASS] size    source == copy
+    [PASS] source unchanged (SHA-256 before == after)
+  Source  : /home/claude/src/usb_forensics_toolkit/data/scenario_b.img
+  Copy    : /home/claude/src/usb_forensics_toolkit/evidence/case_1/evidence.img  (67108864 bytes, read-only)
+  SHA-256 : 849bba6ebffdd19392c53d18d9232ccd2daa09b6dab45470f30a0ed43120669b
+  MD5     : 1332d927c87a7233f1609b6abd5b32d4
+  Status  : VERIFIED (evidence id 1)
+[2/8] Identifying device and volume...
+  Volume  : FAT32  serial 4C53-B0B0  label 'USB_B'  OEM 'mkfs.fat'  67108864 bytes
+[3/8] Analysing file system (on the acquired copy)...
+[4/8] Parsing USB connection history...
+  5 session(s) in the kernel log, clock offset +0530
+  usbmon capture: 2 enumerated device(s) with descriptors
+[5/8] Checking devices against known-good fingerprints...
+    #1   046d:c31c Logitech   USB Keyboard       GENUINE         score 0
+    #2   0781:5567 SanDisk    Cruzer Blade       GENUINE         score 0  [evidence device]
+    #3   0951:1666 Kingston   DataTraveler 3.0   GENUINE         score 0
+  ! #4   0951:1666 Kingston   DataTraveler 3.0   LIKELY_SPOOFED  score 130
+    #5   0781:5567 SanDisk    Cruzer Blade       GENUINE         score 0  [evidence device]
+[6/8] Correlating files with USB sessions and building timeline...
+[7/8] Re-verifying acquired copy after analysis...
+  [PASS] acquired copy still matches acquisition hash
+[8/8] Generating forensic report (PDF)...
+  Report  : /home/claude/src/usb_forensics_toolkit/reports/case_1_report_20261029T203821176882Z.pdf
+
+==============================================================================
+CASE 1 SUMMARY
+==============================================================================
+  Evidence integrity: VERIFIED
+  Files found: 8  Deleted: 2  Suspicious: 6
+  USB sessions: 5  Rogue/suspicious devices: 1
+  ! /client_list.docx: suspicious keyword in filename
+  ! /salary.xlsx: suspicious keyword in filename
+  ! /passwords.txt: suspicious keyword in filename
+  ! /report.pdf: extension .pdf does not match zip/office content; suspicious keyword in content
+  ! /invoice.jpg: extension .jpg does not match exe content
+  ! /secret.txt: hidden attribute set; suspicious keyword in filename
+
+  Q1. Was the device genuine?
+      GENUINE - SanDisk Cruzer Blade serial 4C530001230915101234 matches its known-good fingerprint in all 2 session(s)
+      ! Rogue device #4 0951:1666 "Kingston DataTraveler 3.0" at 2026-10-08T22:44:10: LIKELY_SPOOFED (score 130)
+
+  Q2/Q3. What was copied onto the evidence device, and when?
+      Session #2 2026-10-08T10:15:32 -> 2026-10-08T10:42:10
+        10:16:05  /notes.txt           
+        10:17:41  /holiday.jpg         
+      Session #5 2026-10-08T22:50:02 -> 2026-10-08T23:10:10  [AFTER HOURS]
+        22:51:14  /client_list.docx    SUSPICIOUS
+        22:51:20  /salary.xlsx         SUSPICIOUS DELETED
+        22:52:03  /passwords.txt       SUSPICIOUS DELETED
+        22:53:40  /report.pdf          SUSPICIOUS
+        22:55:12  /invoice.jpg         SUSPICIOUS
+        22:56:31  /secret.txt          SUSPICIOUS HIDDEN
+
+  Alerts: 9
+    [HIGH  ] impersonation session #4 0951:1666 Kingston DataTraveler 3.0 at 2026-10-08T22:44:10: score 130; claims to be a storage devic
+    [HIGH  ] file          /client_list.docx written to device serial 4C530001230915101234 at 2026-10-08T22:51:14 (after hours): suspicio
+    [HIGH  ] file          /salary.xlsx written to device serial 4C530001230915101234 at 2026-10-08T22:51:20 (after hours); later deleted
+    [HIGH  ] file          /passwords.txt written to device serial 4C530001230915101234 at 2026-10-08T22:52:03 (after hours); later delet
+    [HIGH  ] file          /report.pdf written to device serial 4C530001230915101234 at 2026-10-08T22:53:40 (after hours): extension .pdf
+    [HIGH  ] file          /invoice.jpg written to device serial 4C530001230915101234 at 2026-10-08T22:55:12 (after hours): extension .jp
+    [HIGH  ] file          /secret.txt written to device serial 4C530001230915101234 at 2026-10-08T22:56:31 (after hours): hidden attribu
+    [MEDIUM] policy        session #4 0951:1666 Kingston DataTraveler 3.0 connected outside office hours at 2026-10-08T22:44:10
+    [MEDIUM] policy        session #5 0781:5567 SanDisk Cruzer Blade connected outside office hours at 2026-10-08T22:50:02
+
+TIME                 SOURCE        EVENT                 DETAIL
+2026-09-20T18:04:22  filesystem    FILE_MODIFIED         /holiday.jpg (content timestamp, carried over from the source)
+2026-09-29T11:45:30  filesystem    FILE_MODIFIED         /passwords.txt (content timestamp, carried over from the source)
+2026-09-29T11:45:30  filesystem    FILE_DELETED_ENTRY    /passwords.txt (deletion time unknown, mtime used)
+2026-10-02T09:12:40  filesystem    FILE_MODIFIED         /notes.txt (content timestamp, carried over from the source)
+2026-10-05T17:30:12  filesystem    FILE_MODIFIED         /salary.xlsx (content timestamp, carried over from the source)
+2026-10-05T17:30:12  filesystem    FILE_DELETED_ENTRY    /salary.xlsx (deletion time unknown, mtime used)
+2026-10-06T16:20:08  filesystem    FILE_MODIFIED         /client_list.docx (content timestamp, carried over from the source)
+2026-10-07T12:02:56  filesystem    FILE_MODIFIED         /report.pdf (content timestamp, carried over from the source)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /client_list.docx (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /holiday.jpg (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /invoice.jpg (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /notes.txt (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /passwords.txt (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /report.pdf (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /salary.xlsx (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /secret.txt (FAT stores access date only)
+2026-10-08T09:02:11  usb_log       USB_CONNECT           #1 046d:c31c Logitech USB Keyboard serial=None [GENUINE]
+2026-10-08T10:15:32  usb_log       USB_CONNECT           #2 0781:5567 SanDisk Cruzer Blade serial=4C530001230915101234 [GENUINE]
+2026-10-08T10:16:05  filesystem    FILE_CREATED          /notes.txt -> written during USB session #2 (Cruzer Blade)
+2026-10-08T10:17:41  filesystem    FILE_CREATED          /holiday.jpg -> written during USB session #2 (Cruzer Blade)
+2026-10-08T10:42:10  usb_log       USB_DISCONNECT        #2 0781:5567 SanDisk Cruzer Blade serial=4C530001230915101234 [GENUINE]
+2026-10-08T14:03:55  usb_log       USB_CONNECT           #3 0951:1666 Kingston DataTraveler 3.0 serial=001CC0EC34A1F3B0 [GENUINE]
+2026-10-08T14:30:00  usb_log       USB_DISCONNECT        #3 0951:1666 Kingston DataTraveler 3.0 serial=001CC0EC34A1F3B0 [GENUINE]
+2026-10-08T22:44:10  usb_log       USB_CONNECT           #4 0951:1666 Kingston DataTraveler 3.0 serial=None [LIKELY_SPOOFED] [AFTER HOURS]
+2026-10-08T22:44:36  filesystem    FILE_MODIFIED         /invoice.jpg (content timestamp, carried over from the source)
+2026-10-08T22:44:58  usb_log       USB_DISCONNECT        #4 0951:1666 Kingston DataTraveler 3.0 serial=None [LIKELY_SPOOFED] [AFTER HOURS]
+2026-10-08T22:50:02  usb_log       USB_CONNECT           #5 0781:5567 SanDisk Cruzer Blade serial=4C530001230915101234 [GENUINE] [AFTER HOURS]
+2026-10-08T22:51:14  filesystem    FILE_CREATED          /client_list.docx [SUSPICIOUS] -> written during USB session #5 (Cruzer Blade)
+2026-10-08T22:51:20  filesystem    FILE_CREATED          /salary.xlsx [SUSPICIOUS] -> written during USB session #5 (Cruzer Blade)
+2026-10-08T22:52:03  filesystem    FILE_CREATED          /passwords.txt [SUSPICIOUS] -> written during USB session #5 (Cruzer Blade)
+2026-10-08T22:53:40  filesystem    FILE_CREATED          /report.pdf [SUSPICIOUS] -> written during USB session #5 (Cruzer Blade)
+2026-10-08T22:55:12  filesystem    FILE_CREATED          /invoice.jpg [SUSPICIOUS] -> written during USB session #5 (Cruzer Blade)
+2026-10-08T22:56:30  filesystem    FILE_MODIFIED         /secret.txt
+2026-10-08T22:56:31  filesystem    FILE_CREATED          /secret.txt [SUSPICIOUS] -> written during USB session #5 (Cruzer Blade)
+2026-10-08T23:10:10  usb_log       USB_DISCONNECT        #5 0781:5567 SanDisk Cruzer Blade serial=4C530001230915101234 [GENUINE] [AFTER HOURS]
+2026-10-29T20:38:20  custody(UTC)  ACQUISITION_STARTED   Vijay: source=/home/claude/src/usb_forensics_toolkit/data/scenario_b.img dest=/home/claude/src/usb_forensics_toolkit/evidence/c
+2026-10-29T20:38:20  custody(UTC)  SOURCE_HASHED         Vijay: sha256=849bba6ebffdd19392c53d18d9232ccd2daa09b6dab45470f30a0ed43120669b md5=1332d927c87a7233f1609b6abd5b32d4 size=671088
+2026-10-29T20:38:20  custody(UTC)  WRITE_PROTECTION      Vijay: software: O_RDONLY, write probe BLOCKED (EBADF: descriptor opened O_RDONLY); OS: running as root: file permissions do NO
+2026-10-29T20:38:20  custody(UTC)  ACQUISITION_VERIFIED  Vijay: copy=/home/claude/src/usb_forensics_toolkit/evidence/case_1/evidence.img sha256=849bba6ebffdd19392c53d18d9232ccd2daa09b6
+2026-10-29T20:38:20  custody(UTC)  ANALYSIS_STARTED      Vijay: usb_forensics_toolkit 2.0; pytsk3 on the verified copy /home/claude/src/usb_forensics_toolkit/evidence/case_1/evidence.i
+2026-10-29T20:38:21  custody(UTC)  REVERIFY_PASS         Vijay: sha256=849bba6ebffdd19392c53d18d9232ccd2daa09b6dab45470f30a0ed43120669b md5=1332d927c87a7233f1609b6abd5b32d4 stored_sha2
+2026-10-29T20:38:21  custody(UTC)  ANALYSIS_COMPLETED    Vijay: files=8 deleted=2 flagged=6 sessions=5 read_errors=0
+
+Case 1 saved to case.db, timeline written to /home/claude/src/usb_forensics_toolkit/reports/case_1_timeline.csv (1.27s)
+Forensic report: /home/claude/src/usb_forensics_toolkit/reports/case_1_report_20261029T203821176882Z.pdf
+Dashboard: python dashboard/app.py  ->  http://127.0.0.1:5000

@@ -353,7 +353,7 @@ class TestMainPipeline(unittest.TestCase):
         p = self.run_main(os.path.join(self.tmp, "missing.img"))
         self.assertEqual(p.returncode, 2)
         self.assertIn("ACQUISITION FAILED", p.stdout)
-        self.assertNotIn("[2/6]", p.stdout, "analysis must not run without verified evidence")
+        self.assertNotIn("[2/8]", p.stdout, "analysis must not run without verified evidence")
 
     def test_24_main_missing_usb_log_clean_error(self):
         p = subprocess.run([sys.executable, os.path.join(ROOT, "main.py"), self.img,

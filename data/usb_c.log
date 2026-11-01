@@ -1,0 +1,19 @@
+2026-10-14T09:10:03+0530 lab kernel: usb 1-4: new full-speed USB device number 2 using xhci_hcd
+2026-10-14T09:10:03+0530 lab kernel: usb 1-4: New USB device found, idVendor=046d, idProduct=c31c, bcdDevice=64.02
+2026-10-14T09:10:03+0530 lab kernel: usb 1-4: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+2026-10-14T09:10:03+0530 lab kernel: usb 1-4: Product: USB Keyboard
+2026-10-14T09:10:03+0530 lab kernel: usb 1-4: Manufacturer: Logitech
+2026-10-14T09:10:03+0530 lab kernel: input: Logitech USB Keyboard as /devices/pci0000:00/0000:00:14.0/usb1/1-4/1-4:1.0/0003:046D:C31C.0001/input/input3
+2026-10-14T09:10:03+0530 lab kernel: hid-generic 0003:046D:C31C.0001: input,hidraw0: USB HID v1.10 Keyboard [Logitech USB Keyboard] on usb-0000:00:14.0-4/input0
+2026-10-14T21:02:48+0530 lab kernel: usb 1-1: new high-speed USB device number 5 using xhci_hcd
+2026-10-14T21:02:48+0530 lab kernel: usb 1-1: New USB device found, idVendor=0781, idProduct=5567, bcdDevice= 1.00
+2026-10-14T21:02:48+0530 lab kernel: usb 1-1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+2026-10-14T21:02:48+0530 lab kernel: usb 1-1: Product: Cruzer Blade
+2026-10-14T21:02:48+0530 lab kernel: usb 1-1: Manufacturer: SanDisk
+2026-10-14T21:02:48+0530 lab kernel: usb 1-1: SerialNumber: 4C530001230915305555
+2026-10-14T21:02:48+0530 lab kernel: usb-storage 1-1:1.0: USB Mass Storage device detected
+2026-10-14T21:02:48+0530 lab kernel: scsi host6: usb-storage 1-1:1.0
+2026-10-14T21:02:49+0530 lab kernel: sd 6:0:0:0: [sdb] 131072 512-byte logical blocks: (67.1 MB/64.0 MiB)
+2026-10-14T21:02:49+0530 lab kernel:  sdb: sdb1
+2026-10-14T21:02:49+0530 lab kernel: sd 6:0:0:0: [sdb] Attached SCSI removable disk
+2026-10-14T21:41:30+0530 lab kernel: usb 1-1: USB disconnect, device number 5

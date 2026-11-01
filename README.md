@@ -2,17 +2,50 @@
 
 Information Security Lab mini project. Ragini Gupta (240953306) and Vijay (240953312). Guide: Abhishek A K.
 
-Command-line toolkit that investigates suspected USB data theft on a FAT32 disk image:
+The toolkit investigates suspected data theft over USB. You give it a USB device or its forensic image, plus the host's USB history. It then:
 
-1. **Acquire** (`modules/writeblock.py`, Vijay): a read-only acquisition with SHA-256/MD5 verification and a chain-of-custody log.
-2. **Forensics** (`modules/forensics.py`, Ragini): file listing, MAC times, deleted-file recovery, suspicious-file rules.
-3. **Device info** (`modules/device_info.py`, Ragini): USB connection history from a syslog-style log.
-4. **Timeline** (`modules/timeline.py`, Ragini): merged events, printed and exported to `timeline.csv`.
+1. **Acquires** a verified read-only copy, using software write-blocking, SHA-256/MD5 and a chain-of-custody log.
+2. **Identifies** the device and volume: VID/PID, serial, interfaces, disk capacity, FAT volume serial and label.
+3. **Analyses** the file system: MAC times, file hashes, deleted-file recovery, suspicious-file rules, and copy indicators.
+4. **Rebuilds** the USB connection history from kernel logs, optionally adding usbmon descriptor captures (Scapy).
+5. **Detects impersonation**: each device is compared with known-good fingerprints, which catches BadUSB HID injectors, spoofed strings and cloned serials.
+6. **Correlates** files with sessions. It shows which file was written to the stick, during which session, and whether this happened after hours.
+7. **Presents** the findings in a Flask investigation dashboard and an auto-generated PDF report (ReportLab).
 
-Everything is stored in SQLite (`case.db`, schema in `modules/db.py`).
-The dashboard, PDF report and impersonation detection belong to later phases and are not built yet.
+The tool answers the three questions from the synopsis: *what was copied, when, and was the device genuine?*
 
-> **Write-blocking scope.** This toolkit uses *software* write-blocking only: the source is opened `O_RDONLY`, and a write attempt is shown to fail. Hashing **detects** changes but does not prevent them. OS-level read-only state (file permissions, `blockdev --setro`) is reported but not changed. Hardware write-blockers are not used. They are future work.
+```
+python main.py data/scenario_b.img data/usb.log --pcap data/usb_capture.pcap --examiner Vijay
+...
+  Q1. Was the device genuine?
+      GENUINE - SanDisk Cruzer Blade serial 4C530001230915101234 matches its known-good fingerprint in all 2 session(s)
+      ! Rogue device #4 0951:1666 "Kingston DataTraveler 3.0" at 2026-10-08T22:44:10: LIKELY_SPOOFED (score 130)
+
+  Q2/Q3. What was copied onto the evidence device, and when?
+      Session #5 2026-10-08T22:50:02 -> 2026-10-08T23:10:10  [AFTER HOURS]
+        22:51:14  /client_list.docx    SUSPICIOUS
+        22:51:20  /salary.xlsx         SUSPICIOUS DELETED
+        ...
+```
+
+> **Running the demo?** Follow `RUN_GUIDE.md` (setup, checks, the 10-minute professor demo, troubleshooting). `docs/USB_Forensics_What_Changed.docx` explains every feature and what changed since the prototype.
+
+## How the synopsis objectives map to the code
+
+| Synopsis | Implemented in | What it does |
+|---|---|---|
+| **Obj 1** device information (VID/PID, serial, connection times) | `modules/device_info.py` | Parses kernel-log sessions: strings, iSerialNumber index, bound interfaces (usb-storage / HID keyboard / mouse), `sdX` disk and capacity. Uses `sysfs_identify()` for a live `/dev/sdX`. |
+| **Obj 1** file metadata, deleted and suspicious files | `modules/forensics.py` | pytsk3 walk that includes deleted entries; MAC times; SHA-256/MD5 per file; recovery; magic-byte, entropy, keyword and hidden-attribute rules; *copied-onto-volume* indicator (FAT created > modified); boot-sector volume identity. |
+| **Obj 1** USB activity timeline | `modules/timeline.py` | Links each file to the USB session it was written in. Merges file-system, USB-log and custody events. Raises alerts for flagged files copied after hours. Exports to CSV. |
+| **Obj 2** write-blocking + MD5/SHA-256 chain of custody | `modules/writeblock.py` | `O_RDONLY` with a verified write probe; optional `blockdev --setro` for live devices (`--setro`); before, after and copy hashes; re-verification; custody log. |
+| **Obj 3** impersonation detection (descriptor anomalies vs known-good profiles) | `modules/impersonation.py`, `modules/usb_capture.py`, `modules/live_usb.py`, `data/known_good.json` | Rule scoring with GENUINE / UNVERIFIED / SUSPICIOUS / LIKELY_SPOOFED verdicts. Descriptors come from usbmon pcaps (Scapy), sysfs (udev view) or pyusb. Includes a live watch mode. |
+| **Obj 3** interactive investigation dashboard | `dashboard/app.py` | Flask app. Finding cards, then tabs for **Device identification · Connection history · File activity · Timeline reconstruction · Suspicious files** and **Evidence & custody**. |
+| **Obj 3** auto-generated forensic report | `modules/report.py` | ReportLab PDF with findings, integrity, custody, devices and verdicts, a session chart, files, recovered files, alerts, timeline, limitations and sign-off. The report's own SHA-256 is written to the custody log. |
+| SQLite case store | `modules/db.py` | Tables: `cases, evidence, custody_log, volume, files, usb_events, alerts, events, reports`. Older `case.db` files are migrated in place. |
+
+See `docs/pipeline_flowchart.png`, `docs/impersonation_flowchart.png`, `docs/writeblock_flowchart.png` and `docs/architecture.png`.
+
+> **Write-blocking scope.** The toolkit uses *software* write-blocking: the source is opened `O_RDONLY`, and a write attempt is shown to fail. For live block devices, `--setro` (run as root) also sets the kernel read-only flag before acquisition. Hashing **detects** changes but does not prevent them. Hardware write-blockers are not used.
 
 ## Setup (Ubuntu / WSL)
 
@@ -25,17 +58,30 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-* `sleuthkit` is the library behind `pytsk3`. `mtools` and `dosfstools` build the images and read the FAT hidden attribute. `sqlite3` lets you inspect `case.db`.
-* `pip install` should end with `Successfully installed pytsk3-...`. Tested with pytsk3 20260715 on Python 3.10, 3.12 and 3.13.
+`pytsk3` needs `sleuthkit`. `mtools` and `dosfstools` build the images and read the FAT hidden attribute. `scapy` and `pyusb` are optional: without Scapy, a built-in pcap reader is used, and pyusb is only needed for live enumeration on non-Linux systems.
 
-## Build the test images (Scenario A and B)
+## Build the test data
 
 ```bash
-cd data && bash make_scenarios.sh && cd ..
+cd data
+bash make_scenarios.sh        # scenario_a.img + scenario_b.img (64 MiB FAT32)
+python3 make_usb_capture.py   # usb_capture.pcap (usbmon capture of the night's enumerations)
+cd ..
 ```
 
-Prints `Scenario images rebuilt.` and creates `data/scenario_a.img` and `data/scenario_b.img` (64 MiB FAT32 each).
-**The image hashes change every time you rebuild**, because file timestamps change. Compare hashes within one run, never against old logs.
+The images are now **reproducible**. The volume IDs are fixed (`mkfs.vfat --invariant -i`), and `set_fat_times.py` writes the story timestamps from `times_a.json` and `times_b.json` into the FAT directory entries, so every rebuild gives the same SHA-256.
+
+### Scenario B story (employee suspected of copying confidential files)
+
+| Time (8 Oct) | Event | Expected finding |
+|---|---|---|
+| 09:02 | Logitech keyboard (real HID) | GENUINE: keyboards are not flagged just for being keyboards |
+| 10:15–10:42 | SanDisk Cruzer Blade `4C53…1234` (the imaged stick) | notes.txt and holiday.jpg written; normal |
+| 14:03–14:30 | Genuine Kingston DataTraveler | GENUINE, nothing on the image |
+| **22:44:10–22:44:58** | Device claiming *Kingston DataTraveler 3.0* (0951:1666): USB 1.1, no serial, **only a HID keyboard interface** | **LIKELY_SPOOFED (130)**: BadUSB keystroke injector, after hours |
+| **22:50–23:10** | Same SanDisk stick again | **After hours.** 6 flagged files written; 2 later deleted (recovered); report.pdf is really a ZIP; invoice.jpg is an EXE whose content timestamp (22:44:36) falls inside the rogue keyboard session |
+
+Scenario A uses another SanDisk stick in office hours with 3 clean files. It must produce **0 alerts**.
 
 ## Run the tests
 
@@ -43,84 +89,124 @@ Prints `Scenario images rebuilt.` and creates `data/scenario_a.img` and `data/sc
 python -m unittest discover -s tests -v
 ```
 
-Expected output: 25 tests, each ending `ok`, then `OK`. The tests only use temporary files and copies of the scenario images.
+Expected output: **74 tests**, each ending `ok`, then `OK`. The tests are in three files:
 
-## Progress-evaluation demo (Scenario B, Phases 2 + 3)
+* `tests/test_writeblock.py`: the 25 prototype tests.
+* `tests/test_final.py`: 31 tests for the final modules.
+* `tests/test_review_fixes.py`: 18 regression tests, one for each finding of the final code review (listed in `tests/ground_truth.md`).
 
-```bash
-rm -rf case.db evidence recovered timeline.csv        # start a fresh case database (case id 1)
-python main.py data/scenario_b.img --examiner Vijay
-```
+The suite passes whatever time zone the PC uses (`TZ=Asia/Kolkata python -m unittest discover -s tests`).
 
-Expected output:
-* `[1/6]` shows the write probe `BLOCKED (EBADF ...)`, four `[PASS]` hash checks and `Status  : VERIFIED`.
-* `[2/6]`–`[4/6]` run Ragini's analysis on `evidence/case_1/evidence.img`.
-* `[5/6]` shows `[PASS] acquired copy still matches acquisition hash`.
-* The summary shows `Files found: 8  Deleted: 2  Suspicious: 6`, the six `!` lines, then the timeline.
-
-The usage line is `python main.py <image> [usb_log] [--examiner NAME]`. The log defaults to `data/usb.log`, and the examiner defaults to `Ragini`.
-
-## Verify the acquisition hashes
+## Final demo
 
 ```bash
-sha256sum data/scenario_b.img evidence/case_1/evidence.img   # two identical hashes
-md5sum    data/scenario_b.img evidence/case_1/evidence.img   # two identical hashes
-ls -l evidence/case_1/                                        # -r--r--r--  (read-only copy)
-python -m modules.writeblock verify 1                         # re-hashes the copy, compares with case.db
-python -m modules.writeblock custody 1                        # chain-of-custody log for case 1
-sqlite3 -header -column case.db "SELECT id, case_id, status, verified, sha256_before, sha256_after, examiner FROM evidence;"
+rm -rf case.db evidence recovered reports timeline.csv
+python main.py data/scenario_b.img data/usb.log --pcap data/usb_capture.pcap --examiner Vijay   # case 1
+python main.py data/scenario_a.img data/usb_a.log --examiner Ragini                             # case 2 (clean)
+python dashboard/app.py                                                                        # http://127.0.0.1:5000
 ```
 
-Use the case number that `main.py` printed (`Case N saved to case.db`).
+Expected output for case 1:
 
-## Scenario A (clean, no false positives)
+* `[1/8]` shows `BLOCKED (EBADF ...)`, four `[PASS]` lines and `Status  : VERIFIED`.
+* `[5/8]` lists five devices, with `! #4 0951:1666 ... LIKELY_SPOOFED score 130`.
+* The summary shows `Files found: 8  Deleted: 2  Suspicious: 6`, `Rogue/suspicious devices: 1`, and 9 alerts (7 HIGH, 2 MEDIUM).
+* The report is written to `reports/case_1_report_<UTC timestamp>.pdf`. Each regeneration makes a new file, so every SHA-256 in the custody log can still be checked. A copy is in `docs/sample_report_scenario_b.pdf`.
+* The timeline goes to `reports/case_1_timeline.csv`, and `timeline.csv` always holds the latest case.
+
+Case 2 should show `Files found: 3  Deleted: 0  Suspicious: 0` and no alerts.
+
+Useful flags:
+
+* `--no-report`: skip the PDF report.
+* `--hide-custody`: leave custody actions out of the printed timeline.
+* `--device-serial SERIAL`: say which USB session is the imaged device. Without it, the device is matched by capacity.
+* `--profiles FILE`: use a different known-good device list.
+* `--db FILE`: use a different case database. Evidence, recovered files and reports are stored next to it.
+* `--log-year YEAR`: set the year for classic syslog lines, which carry none.
+* `--tz-offset +0530`: set the suspect PC's UTC offset for the pcap. By default it is read from the log.
+
+Exit codes: `0` ok, `1` bad input, `2` acquisition failed, `3` integrity failed after analysis, `4` no readable file system, `5` USB log or capture unreadable. Every failure after acquisition is recorded in the custody log as `ANALYSIS_FAILED`.
+
+**Time base.** FAT and kernel logs both store the suspect PC's local wall-clock time. The tool keeps that time base, so results are identical whichever time zone the analysis PC uses. pcap times are UTC; they are converted with the log's offset (`+0530` in the demo).
+
+### Dashboard
+
+`python dashboard/app.py [--db case.db] [--port 5000]` binds to 127.0.0.1 only.
+
+* POST actions need a CSRF token, and evidence-controlled text (USB strings, file names) is always escaped.
+* The **case list** offers a "New investigation" form that only accepts the images, logs and pcaps in `data/`.
+* Each case opens with **finding cards** for integrity, rogue devices, files and alerts, followed by the two answers: *was the device genuine?* and *what was copied, when?*
+* The tabs are: **Device identification** (volume and device cards with score breakdowns), **Connection history** (SVG session chart with file-write ticks and after-hours shading), **File activity** (filters), **Timeline reconstruction** (source filters and search), **Suspicious files** (reasons, hashes, recovered-file download, all alerts), and **Evidence & custody** (hashes, custody log, *Re-verify now*, report history).
+* Downloads: PDF report and timeline CSV.
+
+Screenshots are in `tests/screenshots/14_*.png` to `21_*.png`.
+
+### Report only
 
 ```bash
-python main.py data/scenario_a.img --examiner Vijay
+python -m modules.report 1                  # writes a new reports/case_1_report_<timestamp>.pdf and logs its SHA-256
 ```
 
-Expected output: `Status  : VERIFIED`, then `Files found: 3  Deleted: 0  Suspicious: 0`.
-
-## Show that hash mismatches are detected
+### Integrity and custody (as before)
 
 ```bash
-python tests/demo_mismatch.py
+sha256sum data/scenario_b.img evidence/case_1/evidence.img
+python -m modules.writeblock verify 1
+python -m modules.writeblock custody 1
+python tests/demo_mismatch.py               # 1-byte corruption and post-acquisition tampering are both detected
 ```
 
-This runs on a temporary copy of the image. It first corrupts one byte during the copy, which gives `[FAIL]` hash lines and `status=MISMATCH`. It then tampers with a good copy after acquisition, which makes re-verification report `[FAIL]`.
-
-## Optional extra OS layer (normal user, not root)
+## Using it on a real USB stick (Linux)
 
 ```bash
-chmod a-w data/scenario_b.img                 # original becomes read-only
-echo tamper >> data/scenario_b.img            # -> Permission denied
-python main.py data/scenario_b.img --examiner Vijay   # "OS read-only status: file permissions are read-only"
-chmod u+w data/scenario_b.img                 # undo (needed before make_scenarios.sh)
+lsblk                                               # find the stick, e.g. /dev/sdb (do NOT mount it)
+sudo modprobe usbmon
+sudo tcpdump -i usbmon1 -w case.pcap &              # optional: start BEFORE plugging in, to capture descriptors
+#   ... plug the stick in, wait a few seconds, then stop tcpdump ...
+sudo journalctl -k -o short-iso --since today > host_usb.log   # has the year + UTC offset (or: sudo dmesg -T)
+sudo python main.py /dev/sdb host_usb.log --pcap case.pcap --setro --examiner Vijay
+# a whole-disk device has a partition table; the first readable FAT partition is analysed
 ```
 
-Root ignores permission bits. The tool reports this when run as root.
+With a block device as the source, the tool reads its USB identity from sysfs, sets the kernel read-only flag (`--setro`), and acquires the whole device.
 
-## Save demo logs
+Live rogue-device check:
 
 ```bash
-mkdir -p mylogs
-python main.py data/scenario_b.img --examiner Vijay 2>&1 | tee mylogs/scenario_b.log
-python -m unittest discover -s tests -v 2>&1 | tee mylogs/tests.log
+python -m modules.live_usb            # every attached USB device with its verdict
+python -m modules.live_usb --watch    # reports each newly plugged device as it appears
 ```
 
-Logs captured while building this version are in `tests/logs/`. Renderings of them are in `tests/screenshots/07_vijay_*.png` to `13_vijay_*.png`.
+Add your organisation's approved device models to `data/known_good.json`.
 
 ## Folder layout
 
 ```
-main.py                  CLI pipeline (acquire -> analyse copy -> log -> timeline -> re-verify)
-modules/db.py            SQLite schema (cases, evidence, files, usb_events, events, alerts, custody_log)
-modules/writeblock.py    acquisition, write-block probe, hashing, verification, custody (Vijay)
-modules/forensics.py     file system analysis (Ragini)
-modules/device_info.py   USB log parsing (Ragini)
-modules/timeline.py      timeline + CSV (Ragini)
-data/                    planted files, make_scenarios.sh, usb.log
-docs/                    architecture, DB schema, flowcharts, Vijay's evaluation notes
-tests/                   unit/integration tests, mismatch demo, logs, screenshots
-evidence/                acquired copies (created at run time, git-ignored)
+main.py                     CLI (8 steps, exit codes 0/1/2/3/4)
+modules/pipeline.py         the investigation pipeline + case summary (shared by CLI and dashboard)
+modules/writeblock.py       acquisition, write-block probe, --setro, hashing, verification, custody (Vijay)
+modules/forensics.py        file system analysis, hashes, copy indicator, volume identity (Ragini)
+modules/device_info.py      USB kernel-log sessions, sysfs identification (Ragini)
+modules/timeline.py         timeline, file/session correlation, CSV (Ragini)
+modules/impersonation.py    known-good fingerprint scoring and verdicts (Vijay)
+modules/usb_capture.py      usbmon pcap descriptor decoding with Scapy (Vijay)
+modules/live_usb.py         live sysfs/pyusb enumeration and watch mode (Vijay)
+modules/report.py           ReportLab PDF report
+modules/db.py               SQLite schema + migration
+dashboard/                  Flask app, templates, CSS (no external CDN; works offline)
+data/                       planted files, make_scenarios.sh, set_fat_times.py, times_*.json,
+                            usb.log, usb_a.log, make_usb_capture.py, usb_capture.pcap, known_good.json
+docs/                       architecture, flowcharts, DB schema, evaluation notes, sample report
+tests/                      unit/integration tests, mismatch demo, logs, screenshots
+evidence/ recovered/ reports/   created at run time (git-ignored)
 ```
+
+## Limitations
+
+* Write-blocking is done in software and is verified by a probe, but it is not a hardware blocker. The toolkit targets Linux; live-device mode and `--setro` are Linux-only.
+* FAT/FAT32 volumes and partition images are supported. Whole-disk images (MBR/GPT) are opened at their first readable partition. NTFS and exFAT are not tested.
+* FAT stores no deletion time and only an access *date*. Deletion events use the modified time as an approximation.
+* Log times and FAT times are local wall-clock times without a time zone. Clock drift on the suspect machine is not corrected.
+* A device that clones *every* descriptor of a genuine model, including serial and interfaces, cannot be detected from descriptors. A keystroke injector still has to expose a HID interface, which is what gives it away.
+* Suspicious-file rules are triage aids and can give false positives.

@@ -5,3 +5,5 @@ __pycache__/
 *.pyc
 data/*.img
 evidence/
+reports/
+timeline.csv

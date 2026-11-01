@@ -1,0 +1,17 @@
+digraph pipeline {
+  graph [rankdir=TB, bgcolor="white", pad="0.5", nodesep="0.5", ranksep="0.35", dpi=200];
+  node  [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=15, width=5.2, height=0.9, margin="0.25,0.14",
+         fillcolor="#F1EFE8", color="#5F5E5A", fontcolor="#2C2C2A", penwidth=1.2];
+  edge  [color="#888888", penwidth=1.6, arrowhead=vee];
+  a1 [label=<<b>[1] Acquire</b>  writeblock.py<br/><font point-size="12">O_RDONLY + write probe, optional blockdev --setro, SHA-256/MD5, custody</font>>, fillcolor="#EEEDFE", color="#534AB7", fontcolor="#3C3489"];
+  a2 [label=<<b>[2] Device &amp; volume identity</b>  forensics.py / device_info.py<br/><font point-size="12">FAT boot sector (serial, label, OEM); sysfs for live /dev/sdX</font>>, fillcolor="#E1F5EE", color="#0F6E56", fontcolor="#085041"];
+  a3 [label=<<b>[3] File system analysis</b>  forensics.py (pytsk3)<br/><font point-size="12">MAC times, hashes, deleted recovery, suspicious rules, copy indicator</font>>, fillcolor="#E1F5EE", color="#0F6E56", fontcolor="#085041"];
+  a4 [label=<<b>[4] Connection history</b>  device_info.py + usb_capture.py<br/><font point-size="12">kernel log sessions, interfaces, disk + capacity; usbmon descriptors (Scapy)</font>>, fillcolor="#E1F5EE", color="#0F6E56", fontcolor="#085041"];
+  a5 [label=<<b>[5] Impersonation detection</b>  impersonation.py<br/><font point-size="12">known-good fingerprints, rule score, verdict, after-hours policy</font>>, fillcolor="#EEEDFE", color="#534AB7", fontcolor="#3C3489"];
+  a6 [label=<<b>[6] Timeline &amp; correlation</b>  timeline.py<br/><font point-size="12">file written during which session; flagged-copy alerts</font>>, fillcolor="#E1F5EE", color="#0F6E56", fontcolor="#085041"];
+  a7 [label=<<b>[7] Re-verify copy</b>  writeblock.py<br/><font point-size="12">REVERIFY_PASS / REVERIFY_FAIL</font>>, fillcolor="#EEEDFE", color="#534AB7", fontcolor="#3C3489"];
+  a8 [label=<<b>[8] Report &amp; dashboard</b>  report.py (ReportLab) · dashboard/app.py (Flask)<br/><font point-size="12">PDF hashed into custody log; 6-tab investigation dashboard</font>>];
+  db [label=<<b>SQLite case.db</b><br/><font point-size="12">cases · evidence · custody_log · volume · files · usb_events · alerts · events · reports</font>>, shape=cylinder, width=4.2, height=1.0];
+  a1 -> a2 -> a3 -> a4 -> a5 -> a6 -> a7 -> a8;
+  {a1 a3 a5 a6} -> db [style=dashed, arrowhead=none, color="#BBBBBB"];
+}

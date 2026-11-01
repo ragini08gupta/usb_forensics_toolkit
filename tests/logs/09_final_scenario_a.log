@@ -1,0 +1,68 @@
+[1/8] Acquiring evidence (software write-block + SHA-256/MD5)...
+  Hashing source before acquisition...
+  Software write-block : source opened O_RDONLY, write attempt BLOCKED (EBADF: descriptor opened O_RDONLY)
+  OS read-only status  : running as root: file permissions do NOT stop writes
+  Hardware blocker     : not used / not verified
+  Copying 67108864 bytes in 1024 KiB chunks...
+  Hashing acquired copy and re-hashing source...
+    [PASS] SHA-256 source == copy
+    [PASS] MD5     source == copy
+    [PASS] size    source == copy
+    [PASS] source unchanged (SHA-256 before == after)
+  Source  : /home/claude/src/usb_forensics_toolkit/data/scenario_a.img
+  Copy    : /home/claude/src/usb_forensics_toolkit/evidence/case_2/evidence.img  (67108864 bytes, read-only)
+  SHA-256 : 7d4ff48aa80a96453d36c4dff61edb9779e716dfe043ab0a94a873b3a2ec5700
+  MD5     : c0227b9e54ba8dd4d4d91e182001f707
+  Status  : VERIFIED (evidence id 2)
+[2/8] Identifying device and volume...
+  Volume  : FAT32  serial 0A0A-2026  label 'USB_A'  OEM 'mkfs.fat'  67108864 bytes
+[3/8] Analysing file system (on the acquired copy)...
+[4/8] Parsing USB connection history...
+  1 session(s) in the kernel log, clock offset +0530
+[5/8] Checking devices against known-good fingerprints...
+    #6   0781:5567 SanDisk    Cruzer Blade       GENUINE         score 0  [evidence device]
+[6/8] Correlating files with USB sessions and building timeline...
+[7/8] Re-verifying acquired copy after analysis...
+  [PASS] acquired copy still matches acquisition hash
+[8/8] Generating forensic report (PDF)...
+  Report  : /home/claude/src/usb_forensics_toolkit/reports/case_2_report_20261029T203822411230Z.pdf
+
+==============================================================================
+CASE 2 SUMMARY
+==============================================================================
+  Evidence integrity: VERIFIED
+  Files found: 3  Deleted: 0  Suspicious: 0
+  USB sessions: 1  Rogue/suspicious devices: 0
+
+  Q1. Was the device genuine?
+      GENUINE - SanDisk Cruzer Blade serial 4C530001230915209876 matches its known-good fingerprint in all 1 session(s)
+
+  Q2/Q3. What was copied onto the evidence device, and when?
+      Session #6 2026-10-08T11:04:30 -> 2026-10-08T11:20:12
+        11:05:21  /notes.txt           
+        11:06:02  /slides.txt          
+        11:06:47  /todo.txt            
+
+TIME                 SOURCE        EVENT                 DETAIL
+2026-10-06T10:22:44  filesystem    FILE_MODIFIED         /slides.txt (content timestamp, carried over from the source)
+2026-10-07T15:40:10  filesystem    FILE_MODIFIED         /notes.txt (content timestamp, carried over from the source)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /notes.txt (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /slides.txt (FAT stores access date only)
+2026-10-08T00:00:00  filesystem    FILE_ACCESSED         /todo.txt (FAT stores access date only)
+2026-10-08T09:58:18  filesystem    FILE_MODIFIED         /todo.txt (content timestamp, carried over from the source)
+2026-10-08T11:04:30  usb_log       USB_CONNECT           #6 0781:5567 SanDisk Cruzer Blade serial=4C530001230915209876 [GENUINE]
+2026-10-08T11:05:21  filesystem    FILE_CREATED          /notes.txt -> written during USB session #6 (Cruzer Blade)
+2026-10-08T11:06:02  filesystem    FILE_CREATED          /slides.txt -> written during USB session #6 (Cruzer Blade)
+2026-10-08T11:06:47  filesystem    FILE_CREATED          /todo.txt -> written during USB session #6 (Cruzer Blade)
+2026-10-08T11:20:12  usb_log       USB_DISCONNECT        #6 0781:5567 SanDisk Cruzer Blade serial=4C530001230915209876 [GENUINE]
+2026-10-29T20:38:21  custody(UTC)  ACQUISITION_STARTED   Ragini: source=/home/claude/src/usb_forensics_toolkit/data/scenario_a.img dest=/home/claude/src/usb_forensics_toolkit/evidence/c
+2026-10-29T20:38:21  custody(UTC)  SOURCE_HASHED         Ragini: sha256=7d4ff48aa80a96453d36c4dff61edb9779e716dfe043ab0a94a873b3a2ec5700 md5=c0227b9e54ba8dd4d4d91e182001f707 size=671088
+2026-10-29T20:38:21  custody(UTC)  WRITE_PROTECTION      Ragini: software: O_RDONLY, write probe BLOCKED (EBADF: descriptor opened O_RDONLY); OS: running as root: file permissions do NO
+2026-10-29T20:38:22  custody(UTC)  ACQUISITION_VERIFIED  Ragini: copy=/home/claude/src/usb_forensics_toolkit/evidence/case_2/evidence.img sha256=7d4ff48aa80a96453d36c4dff61edb9779e716df
+2026-10-29T20:38:22  custody(UTC)  ANALYSIS_STARTED      Ragini: usb_forensics_toolkit 2.0; pytsk3 on the verified copy /home/claude/src/usb_forensics_toolkit/evidence/case_2/evidence.i
+2026-10-29T20:38:22  custody(UTC)  REVERIFY_PASS         Ragini: sha256=7d4ff48aa80a96453d36c4dff61edb9779e716dfe043ab0a94a873b3a2ec5700 md5=c0227b9e54ba8dd4d4d91e182001f707 stored_sha2
+2026-10-29T20:38:22  custody(UTC)  ANALYSIS_COMPLETED    Ragini: files=3 deleted=0 flagged=0 sessions=1 read_errors=0
+
+Case 2 saved to case.db, timeline written to /home/claude/src/usb_forensics_toolkit/reports/case_2_timeline.csv (1.07s)
+Forensic report: /home/claude/src/usb_forensics_toolkit/reports/case_2_report_20261029T203822411230Z.pdf
+Dashboard: python dashboard/app.py  ->  http://127.0.0.1:5000
